@@ -63,6 +63,6 @@
     "**/*.{js,ts}": "npm run lint:fix"
   },
   "author": "Travis",
-  "repository": "LeBaThuan/typingmind-proxy",
+  "repository": "travis-thuanle/typingmind-proxy",
   "license": "MIT"
 }

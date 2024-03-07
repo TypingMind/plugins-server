@@ -1,8 +1,8 @@
 # TypingMind Proxy
 
-[![Docker Image CI](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/docker-image.yml)
-[![CodeQL](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/codeql.yml/badge.svg)](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/codeql.yml)
-[![Build TypingMind Proxy](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/test.yml/badge.svg)](https://github.com/LeBaThuan/typingmind-proxy/actions/workflows/test.yml)
+[![Docker Image CI](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml)
+[![CodeQL](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml/badge.svg)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml)
+[![Build TypingMind Proxy](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/test.yml/badge.svg)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/test.yml)
 
 ## 🌟 Introduction
 
@@ -48,7 +48,7 @@ Let's say you want a plugin that fetches additional user profile data from an ex
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/LeBaThuan/typingmind-proxy.git
+git clone https://github.com/travis-thuanle/typingmind-proxy.git
 cd typingmind-proxy
 ```
 
