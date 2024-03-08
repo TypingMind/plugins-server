@@ -3,13 +3,15 @@ import express, { Request, Response, Router } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
 
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
+import { StabilitySchema } from './stabilityModel';
+
 export const stabilityRegistry = new OpenAPIRegistry();
+stabilityRegistry.register('Stability', StabilitySchema);
 
 export const stabilityRouter: Router = (() => {
   const router = express.Router();
@@ -18,7 +20,7 @@ export const stabilityRouter: Router = (() => {
     method: 'post',
     path: '/stability/generate-image',
     tags: ['Stability'],
-    responses: createApiResponse(z.null(), 'Success'),
+    responses: createApiResponse(StabilitySchema, 'Success'),
   });
 
   router.post('/generate-image', async (req: Request, res: Response) => {
@@ -82,7 +84,7 @@ export const stabilityRouter: Router = (() => {
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Service is healthy',
-        { imageUrl: imageUrl },
+        { imageUrl },
         StatusCodes.OK
       );
       handleServiceResponse(serviceResponse, res);
