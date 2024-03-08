@@ -22,6 +22,11 @@ app.use(cors());
 app.use(helmet());
 app.use(rateLimiter);
 app.use(bodyParser.json());
+app.use((req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  res.removeHeader('Content-Security-Policy');
+  next();
+});
 // Request logging
 app.use(requestLogger());
 
