@@ -1,7 +1,7 @@
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-  entry: ['./api'],
+  entry: ['./src'],
   splitting: false,
   sourcemap: true,
   clean: true,

@@ -4,7 +4,7 @@
     "module": "CommonJS",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["api/*"]
+      "@/*": ["src/*"]
     },
     "moduleResolution": "Node",
     "outDir": "dist",
@@ -19,5 +19,5 @@
   },
   "extends": [],
   "exclude": ["node_modules"],
-  "include": ["api/**/*.ts"]
+  "include": ["src/**/*.ts"]
 }
