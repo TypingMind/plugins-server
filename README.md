@@ -1,4 +1,8 @@
-# TypingMind Proxy
+<h2 align="center">
+  <img height="150" alt="Typing Mind - A better UI for ChatGPT" src="https://www.typingmind.com/banner.png" />
+<br/>
+TypingMind Plugins Server
+</h2>
 
 [![Docker Image CI](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml)
 [![CodeQL](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml/badge.svg)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml)
@@ -6,20 +10,20 @@
 
 ## 🌟 Introduction
 
-TypingMind Proxy is a flexible and customizable proxy server designed to empower developers to extend its functionality with tailored plugins. Build integrations, automate tasks, and enhance your proxy experience with the power of code.
+TypingMind Plugins Server is a flexible and customizable server designed to empower developers to extend its functionality with tailored plugins. Build integrations, automate tasks, and enhance your experience with the power of code.
 
 ## 🔌 Enhancing Plugins with Server-Side API Calls
 
-While TypingMind Proxy plugins are primarily designed for client-side logic, they often need to interact with external APIs that require server-side actions (e.g., authentication, complex data processing). Here's how to achieve this:
+While TypingMind plugins are primarily designed for client-side logic, they often need to interact with external APIs that require server-side actions (e.g., authentication, complex data processing). Here's how to achieve this:
 
-**1. Extend TypingMind Proxy Functionality**
+**1. Extend TypingMind Plugins Server Functionality**
 
-- **Fork and Modify:** Fork the TypingMind Proxy repository and directly implement your new API proxy endpoint within the server code. This provides the most control and flexibility.
-- **Submit a Pull Request:** If your API proxy would be generally useful to the community, consider creating a pull request to integrate it directly into the main TypingMind Proxy project.
+- **Fork and Modify:** Fork the TypingMind Plugins Server repository and directly implement your new API endpoint within the server code. This provides the most control and flexibility.
+- **Submit a Pull Request:** If your API would be generally useful to the community, consider creating a pull request to integrate it directly into the main TypingMind Plugins Server project.
 
-**2. Call Your Extended Proxy from the Plugin**
+**2. Call Your Extended from the Plugin**
 
-- **Endpoint Access:** Once your API proxy is implemented in TypingMind Proxy, your plugin can make standard HTTP requests to this new endpoint using client-side JavaScript libraries like `fetch` or `axios`.
+- **Endpoint Access:** Once your API is implemented in TypingMind Plugins Server, your plugin can make standard HTTP requests to this new endpoint using client-side JavaScript libraries like `fetch` or `axios`.
 
 **Example Scenario**
 
@@ -32,9 +36,9 @@ Let's say you want a plugin that fetches additional user profile data from an ex
 **Important Considerations:**
 
 - **Security:** Carefully manage API keys and authentication within your proxy implementation.
-- **Shared Plugins:** If you create a plugin with server-side dependencies, provide clear instructions if others want to use it in their TypingMind Proxy instances.
+- **Shared Plugins:** If you create a plugin with server-side dependencies, provide clear instructions if others want to use it in their TypingMind Plugins Server instances.
 
-## 🚀 Features
+## 📋 Features
 
 - **Powerful Plugin Architecture:** Design plugins to intercept requests, modify responses, and integrate with external services.
 - **Streamlined Development:** Clear guidelines and documentation for rapid plugin creation.
@@ -48,8 +52,8 @@ Let's say you want a plugin that fetches additional user profile data from an ex
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/travis-thuanle/typingmind-proxy.git
-cd typingmind-proxy
+git clone https://github.com/TypingMind/typingmind-plugins-server.git
+cd typingmind-plugins-server
 ```
 
 ### Step 2: Environment Configuration
@@ -65,6 +69,20 @@ cd typingmind-proxy
 ```bash
 npm run dev
 ```
+
+## 🚀 Deploying Your Server
+
+The TypingMind Plugins Server can be deployed to any server that supports Node.js. Here's how to deploy it to Render, a cloud platform that makes it easy to host and scale web apps and services.
+
+1. Create a Render Account: If you don't have one, sign up at <https://render.com>.
+2. New Web Service: In your Render dashboard, create a new Web Service.
+3. Connect to Repository: Connect your forked TypingMind Plugins Server repository.
+4. Environment Variables: Set up any required environment variables in Render's settings for your service.
+5. Deploy: Deploy your service!
+
+## 🔗 Integration with TypingMind
+
+Plugin Configuration: In your TypingMind plugin's code, direct API requests to the correct URL of your deployed TypingMind Plugins Server instance on Render.
 
 ## 🤝 Contributing
 
