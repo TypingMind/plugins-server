@@ -1,12 +1,12 @@
 <h2 align="center">
   <img height="150" alt="Typing Mind - A better UI for ChatGPT" src="https://www.typingmind.com/banner.png" />
 <br/>
-TypingMind Plugins Server
+Plugins Server
 </h2>
 
-[![Docker Image CI](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/docker-image.yml)
-[![CodeQL](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml/badge.svg)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/codeql.yml)
-[![Build TypingMind Proxy](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/test.yml/badge.svg)](https://github.com/travis-thuanle/typingmind-proxy/actions/workflows/test.yml)
+[![Docker Image CI](https://github.com/TypingMind/plugins-server/actions/workflows/docker-image.yml/badge.svg?branch=master)](https://github.com/TypingMind/plugins-server/actions/workflows/docker-image.yml)
+[![CodeQL](https://github.com/TypingMind/plugins-server/actions/workflows/codeql.yml/badge.svg)](https://github.com/TypingMind/plugins-server/actions/workflows/codeql.yml)
+[![Build TypingMind Proxy](https://github.com/TypingMind/plugins-server/actions/workflows/test.yml/badge.svg)](https://github.com/TypingMind/plugins-server/actions/workflows/test.yml)
 
 ## 🌟 Introduction
 
@@ -52,8 +52,9 @@ Let's say you want a plugin that fetches additional user profile data from an ex
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/TypingMind/typingmind-plugins-server.git
-cd typingmind-plugins-server
+git clone https://github.com/TypingMind/plugins-server.git
+cd plugins-server
+npm ci
 ```
 
 ### Step 2: Environment Configuration
