@@ -1,7 +1,7 @@
 {
-  "name": "typingmind-proxy",
-  "version": "1.1.0",
-  "description": "TypingMind Proxy",
+  "name": "typingmind-plugin-server",
+  "version": "0.1.0",
+  "description": "TypingMind Plugin Server",
   "main": "index.ts",
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts | pino-pretty",
