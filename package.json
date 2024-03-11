@@ -1,6 +1,6 @@
 {
   "name": "typingmind-plugin-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TypingMind Plugin Server",
   "main": "index.ts",
   "scripts": {
