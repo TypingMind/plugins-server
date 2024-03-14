@@ -6,7 +6,7 @@ Thank you for your interest in enhancing the TypingMind Proxy! Here's how you ca
 
 1. **Fork the Repository:** Begin by forking the main TypingMind Proxy repository. This creates your working copy.
 2. **Clone Locally:** Use `git clone your-fork-url` to download your fork to your development environment.
-3. **Create a Branch:** Isolate your changes with `git checkout -b descriptive-branch-name master`.
+3. **Create a Branch:** Isolate your changes with `git checkout -b descriptive-branch-name main`.
 4. **Develop Your Plugin:** Build new features, address bugs, and optimize your plugin's functionality.
 5. **Thorough Testing:** Ensure your plugin works as intended and doesn't introduce regressions.
 6. **Meaningful Commits:** Use the "Conventional Commits" VSCode extension (Identifier: vivaxy.vscode-conventional-commits) for clear and structured commit messages.
