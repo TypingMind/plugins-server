@@ -1,4 +1,4 @@
-name: Build TypingMind Proxy Application
+name: Build TypingMind Plugin Server
 
 on:
   push:
