@@ -2,10 +2,16 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-open
 
 import { healthCheckRegistry } from '@/routes/healthCheck/healthCheckRouter';
 import { stabilityRegistry } from '@/routes/stability/stabilityRouter';
+import { webContentRegistry } from '@/routes/webContent/webContentModelRouter';
 import { transcriptRegistry } from '@/routes/youtubeTranscript/transcriptRouter';
 
 export function generateOpenAPIDocument() {
-  const registry = new OpenAPIRegistry([healthCheckRegistry, stabilityRegistry, transcriptRegistry]);
+  const registry = new OpenAPIRegistry([
+    healthCheckRegistry,
+    stabilityRegistry,
+    transcriptRegistry,
+    webContentRegistry,
+  ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({

@@ -11,6 +11,7 @@ import requestLogger from '@/common/middleware/requestLogger';
 import { healthCheckRouter } from '@/routes/healthCheck/healthCheckRouter';
 
 import { stabilityRouter } from './routes/stability/stabilityRouter';
+import { webContentRouter } from './routes/webContent/webContentModelRouter';
 import { transcriptRouter } from './routes/youtubeTranscript/transcriptRouter';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -36,6 +37,7 @@ app.use('/health-check', healthCheckRouter);
 app.use('/stability', stabilityRouter);
 app.use('/images', express.static('public/images'));
 app.use('/transcript', transcriptRouter);
+app.use('/get-content', webContentRouter);
 // Swagger UI
 app.use(openAPIRouter);
 
