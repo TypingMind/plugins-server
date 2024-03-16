@@ -1,3 +1,5 @@
+## [1.2.1](https://github.com/travis-thuanle/typingmind-proxy/compare/1.2.0...1.2.1) (2024-03-16)
+
 ## 1.2.0 (2024-03-14)
 
 ### Features
