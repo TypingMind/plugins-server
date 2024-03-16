@@ -10,8 +10,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { healthCheckRouter } from '@/routes/healthCheck/healthCheckRouter';
 
-import { stabilityRouter } from './routes/stability/stabilityRouter';
-import { webContentRouter } from './routes/webContent/webContentModelRouter';
+import { articleReaderRouter } from './routes/articleReader/articleReaderRouter';
 import { transcriptRouter } from './routes/youtubeTranscript/transcriptRouter';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
@@ -34,10 +33,9 @@ app.use(requestLogger());
 
 // Routes
 app.use('/health-check', healthCheckRouter);
-app.use('/stability', stabilityRouter);
 app.use('/images', express.static('public/images'));
 app.use('/transcript', transcriptRouter);
-app.use('/get-content', webContentRouter);
+app.use('/get-content', articleReaderRouter);
 // Swagger UI
 app.use(openAPIRouter);
 

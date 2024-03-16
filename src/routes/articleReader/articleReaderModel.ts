@@ -3,8 +3,8 @@ import { z } from 'zod';
 
 extendZodWithOpenApi(z);
 
-export type Transcript = z.infer<typeof WebContentSchema>;
-export const WebContentSchema = z.object({
+export type Transcript = z.infer<typeof ArticleReaderSchema>;
+export const ArticleReaderSchema = z.object({
   title: z.string(),
   content: z.string(),
 });
