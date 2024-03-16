@@ -8,10 +8,10 @@ import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
-import { WebContentSchema } from './webContentModel';
+import { ArticleReaderSchema } from './articleReaderModel';
 
-export const webContentRegistry = new OpenAPIRegistry();
-webContentRegistry.register('WebContent', WebContentSchema);
+export const articleReaderRegistry = new OpenAPIRegistry();
+articleReaderRegistry.register('ArticleReader', ArticleReaderSchema);
 
 const removeUnwantedElements = (_cheerio: any) => {
   const elementsToRemove = [
@@ -57,14 +57,14 @@ const fetchAndCleanContent = async (url: string) => {
   return { title, content: bodyContent };
 };
 
-export const webContentRouter: Router = (() => {
+export const articleReaderRouter: Router = (() => {
   const router = express.Router();
 
-  webContentRegistry.registerPath({
+  articleReaderRegistry.registerPath({
     method: 'get',
     path: '/content',
-    tags: ['WebContent'],
-    responses: createApiResponse(WebContentSchema, 'Success'),
+    tags: ['Article Reader'],
+    responses: createApiResponse(ArticleReaderSchema, 'Success'),
   });
 
   router.get('/', async (_req: Request, res: Response) => {
