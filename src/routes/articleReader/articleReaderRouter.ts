@@ -1,8 +1,10 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import { Readability } from '@mozilla/readability';
 import * as cheerio from 'cheerio';
 import express, { Request, Response, Router } from 'express';
 import got from 'got';
 import { StatusCodes } from 'http-status-codes';
+import { JSDOM } from 'jsdom';
 
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
@@ -52,9 +54,13 @@ const fetchAndCleanContent = async (url: string) => {
   const $ = cheerio.load(body);
   const title = $('title').text();
   removeUnwantedElements($);
-  const bodyContent = $.text().replace(/\s\s+/g, ' ').trim();
+  const doc = new JSDOM($.text(), {
+    url: url,
+  });
+  const reader = new Readability(doc.window.document);
+  const article = reader.parse();
 
-  return { title, content: bodyContent };
+  return { title, content: article ? article.textContent : '' };
 };
 
 export const articleReaderRouter: Router = (() => {
