@@ -40,10 +40,6 @@ const removeUnwantedElements = (_cheerio: any) => {
     'area',
     'svg',
     'math',
-    'table',
-    'caption',
-    'colgroup',
-    'col',
   ];
 
   elementsToRemove.forEach((element) => _cheerio(element).remove());
