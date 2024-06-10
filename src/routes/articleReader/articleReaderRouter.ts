@@ -6,7 +6,9 @@ import got from 'got';
 import { StatusCodes } from 'http-status-codes';
 import { JSDOM } from 'jsdom';
 
+import { apiKeyHeader } from '@/api-docs/openAPIHeaderBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { apiKeyHandler } from '@/common/middleware/apiKeyHandler';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
@@ -62,10 +64,15 @@ const fetchAndCleanContent = async (url: string) => {
 export const articleReaderRouter: Router = (() => {
   const router = express.Router();
 
+  router.use(apiKeyHandler);
+
   articleReaderRegistry.registerPath({
     method: 'get',
     path: '/content',
     tags: ['Article Reader'],
+    request: {
+      headers: [apiKeyHeader],
+    },
     responses: createApiResponse(ArticleReaderSchema, 'Success'),
   });
 
@@ -88,7 +95,10 @@ export const articleReaderRouter: Router = (() => {
     } catch (error) {
       console.error(`Error fetching content ${(error as Error).message}`);
       const errorMessage = `Error fetching content $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      handleServiceResponse(
+        new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR),
+        res
+      );
     }
   });
 

@@ -10,4 +10,5 @@ export const env = cleanEnv(process.env, {
   CORS_ORIGIN: str({ default: '*' }),
   COMMON_RATE_LIMIT_MAX_REQUESTS: num({ default: 100 }),
   COMMON_RATE_LIMIT_WINDOW_MS: num({ default: 60000 }),
+  API_KEY: str(),
 });

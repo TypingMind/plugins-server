@@ -3,7 +3,9 @@ import express, { Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { YoutubeTranscript } from 'youtube-transcript';
 
+import { apiKeyHeader } from '@/api-docs/openAPIHeaderBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
+import { apiKeyHandler } from '@/common/middleware/apiKeyHandler';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
@@ -15,10 +17,15 @@ transcriptRegistry.register('Transcript', TranscriptSchema);
 export const transcriptRouter: Router = (() => {
   const router = express.Router();
 
+  router.use(apiKeyHandler);
+
   transcriptRegistry.registerPath({
     method: 'get',
     path: '/transcript',
     tags: ['Youtube Transcript'],
+    request: {
+      headers: [apiKeyHeader],
+    },
     responses: createApiResponse(TranscriptSchema, 'Success'),
   });
 
@@ -46,7 +53,10 @@ export const transcriptRouter: Router = (() => {
       handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = `Error fetching transcript $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      handleServiceResponse(
+        new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR),
+        res
+      );
     }
   });
   return router;

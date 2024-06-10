@@ -9,7 +9,7 @@ export function createApiResponse(schema: z.ZodTypeAny, description: string, sta
       description,
       content: {
         'application/json': {
-          schema: ServiceResponseSchema(schema),
+          schema: ServiceResponseSchema(schema, statusCode == StatusCodes.OK, statusCode),
         },
       },
     },

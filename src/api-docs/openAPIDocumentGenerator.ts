@@ -2,10 +2,23 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-open
 
 import { articleReaderRegistry } from '@/routes/articleReader/articleReaderRouter';
 import { healthCheckRegistry } from '@/routes/healthCheck/healthCheckRouter';
+import { smtpMailRegistry } from '@/routes/smtpMail/smtpMailRouter';
 import { transcriptRegistry } from '@/routes/youtubeTranscript/transcriptRouter';
 
 export function generateOpenAPIDocument() {
-  const registry = new OpenAPIRegistry([healthCheckRegistry, transcriptRegistry, articleReaderRegistry]);
+  const registry = new OpenAPIRegistry([
+    healthCheckRegistry,
+    transcriptRegistry,
+    articleReaderRegistry,
+    smtpMailRegistry,
+  ]);
+
+  registry.registerComponent('headers', 'x-api-key', {
+    example: '1234',
+    required: true,
+    description: 'The API Key you were given in the developer portal',
+  });
+
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
   return generator.generateDocument({

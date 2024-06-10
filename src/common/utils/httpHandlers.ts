@@ -13,7 +13,18 @@ export const validateRequest = (schema: ZodSchema) => (req: Request, res: Respon
     schema.parse({ body: req.body, query: req.query, params: req.params });
     next();
   } catch (err) {
-    const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => e.message).join(', ')}`;
+    const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => `${e.path}: ${e.message} ${e.code}`).join(', ')}`;
+    const statusCode = StatusCodes.BAD_REQUEST;
+    res.status(statusCode).send(new ServiceResponse<null>(ResponseStatus.Failed, errorMessage, null, statusCode));
+  }
+};
+
+export const validateRequestBody = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
+  try {
+    schema.parse(req.body);
+    next();
+  } catch (err) {
+    const errorMessage = `Invalid input: ${(err as ZodError).errors.map((e) => `${e.path}: ${e.message} ${e.code}`).join(', ')}`;
     const statusCode = StatusCodes.BAD_REQUEST;
     res.status(statusCode).send(new ServiceResponse<null>(ResponseStatus.Failed, errorMessage, null, statusCode));
   }
