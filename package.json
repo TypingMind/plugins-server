@@ -15,9 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest --coverage",
     "prepare": "husky install",
-    "release": "release-it",
-    "postinstall": "npm run typings",
-    "typings": "typings install"
+    "release": "release-it"
   },
   "dependencies": {
     "@asteasolutions/zod-to-openapi": "^6.4.0",
