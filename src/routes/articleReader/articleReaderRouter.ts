@@ -73,7 +73,14 @@ export const articleReaderRouter: Router = (() => {
     const { url } = _req.query;
 
     if (typeof url !== 'string') {
-      return new ServiceResponse(ResponseStatus.Failed, 'URL must be a string', null, StatusCodes.BAD_REQUEST);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        'URL must be a string',
+        null,
+        StatusCodes.BAD_REQUEST
+      );
+      handleServiceResponse(serviceResponse, res);
+      return;
     }
 
     try {
@@ -85,10 +92,19 @@ export const articleReaderRouter: Router = (() => {
         StatusCodes.OK
       );
       handleServiceResponse(serviceResponse, res);
+      return;
     } catch (error) {
       console.error(`Error fetching content ${(error as Error).message}`);
-      const errorMessage = `Error fetching content $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      const errorMessage = `Error fetching content ${(error as Error).message}`;
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        errorMessage,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+
+      handleServiceResponse(serviceResponse, res);
+      return;
     }
   });
 
