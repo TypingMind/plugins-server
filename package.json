@@ -35,7 +35,7 @@
     "http-status-codes": "^2.3.0",
     "jsdom": "^24.0.0",
     "path": "^0.12.7",
-    "pino-http": "^9.0.0",
+    "pino-http": "^10.3.0",
     "swagger-ui-express": "^5.0.0",
     "uuidv4": "^6.2.13",
     "youtube-transcript": "^1.1.0",
