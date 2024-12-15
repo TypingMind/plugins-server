@@ -22,6 +22,13 @@ powerpointGeneratorRegistry.registerPath({
   responses: createApiResponse(PowerpointGeneratorResponseSchema, 'Success'),
 });
 
+// Create folder to contains generated files
+const exportsDir = path.join(__dirname, '../../..', 'powerpoint-exports');
+// Ensure the exports directory exists
+if (!fs.existsSync(exportsDir)) {
+  fs.mkdirSync(exportsDir, { recursive: true });
+}
+
 // Helper function to detect number, percent, or currency
 function detectType(value: string) {
   // Regular expression patterns
@@ -340,26 +347,22 @@ async function execGenSlidesFuncs(slides: any[]) {
     }
   });
 
-  // LAST: Export Presentation
-  // Ensure the exports directory exists
-  const exportsDir = path.join(__dirname, 'powerpoint-exports');
-  if (!fs.existsSync(exportsDir)) {
-    fs.mkdirSync(exportsDir);
-  }
-
   const fileName = `your-presentation-${new Date().toISOString().replace(/\D/gi, '')}`;
-  const filePath = path.join(__dirname, 'powerpoint-exports', fileName);
+  const filePath = path.join(exportsDir, fileName);
 
-  const result = await pptx.writeFile({
+  await pptx.writeFile({
     fileName: filePath,
     compression: COMPRESS,
   });
 
-  return result;
+  return fileName + '.pptx';
 }
 
 export const powerpointGeneratorRouter: Router = (() => {
   const router = express.Router();
+  // Static route for downloading files
+  router.use('/downloads', express.static(exportsDir));
+
   router.post('/generate', async (_req: Request, res: Response) => {
     const { slides = [] } = _req.body;
     if (!slides.length) {
@@ -373,13 +376,12 @@ export const powerpointGeneratorRouter: Router = (() => {
     }
 
     try {
-      const filePath = await execGenSlidesFuncs(slides);
-      console.log('file path -> ', filePath);
+      const fileName = await execGenSlidesFuncs(slides);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
         {
-          filepath: filePath,
+          downloadUrl: `/downloads/${fileName}`,
         },
         StatusCodes.OK
       );
