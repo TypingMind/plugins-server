@@ -11,7 +11,6 @@ import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import { PowerpointGeneratorResponseSchema } from './powerpointGeneratorModel';
-export const CUST_NAME = 'S.T.A.R. Laboratories';
 export const COMPRESS = true;
 export const powerpointGeneratorRegistry = new OpenAPIRegistry();
 powerpointGeneratorRegistry.register('PowerpointGenerator', PowerpointGeneratorResponseSchema);
@@ -65,6 +64,30 @@ cron.schedule('0 * * * *', () => {
 
 const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
+// Define configurable options for layout, font size, and font family
+const defaultSlideConfig = {
+  layout: 'LAYOUT_WIDE', // Default: LAYOUT_WIDE, enum: LAYOUT_16x9 10 x 5.625 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_4x3 10 x 7.5 inches
+  titleFontSize: 52, // Emphasize the main topic in Title Slide
+  headerFontSize: 32, // The slide headers in the Content Slide
+  bodyFontSize: 24, // The main text font size
+  fontFamily: 'Calibri', // Default font family for the slide, Calibri, Arial
+  backgroundColor: '#FFFFFF', // Default background color
+  textColor: '#000000', // Text color
+  showFooter: true, // Display footer or not
+  showSlideNumber: true, // Display slide number or not
+  footerBackgroundColor: '#003B75', // Default background color
+  footerText: 'footer text', // Footer text content.
+  footerTextColor: '#FFFFFF', // Default footer color
+  footerFontSize: 10, // Default footer font size
+  showTableBorder: true, // Show table border or not
+  tableHeaderBackgroundColor: '#003B75', // Background of table header, // Dark blue background for headers
+  tableHeaderTextColor: '#FFFFFF', // Table header color
+  tableBorderThickness: 1, // pt: 1, // Border thickness
+  tableBorderColor: '#000000', // Black border
+  tableFontSize: 14, // Font size inside the table
+  tableTextColor: '#000000', // Text color inside the table
+};
+
 // Helper function to detect number, percent, or currency
 function detectType(value: string) {
   // Regular expression patterns
@@ -95,11 +118,54 @@ function getAlignment(type: string) {
   }
 }
 
-function defineMasterSlides(pptx: any) {
+function defineMasterSlides(pptx: any, config: any) {
+  const slideNumberConfig =
+    config.showFooter && config.showSlideNumber
+      ? {
+          x: 0.0,
+          y: 6.9,
+          h: 0.6,
+          align: 'center', // Center text horizontally
+          valign: 'middle', // Center text vertically
+          fontSize: config.footerFontSize,
+          fontFace: config.fontFamily,
+          color: config.footerTextColor,
+          bold: true,
+        }
+      : undefined;
+
+  const footerConfigs = config.showFooter
+    ? [
+        // Footer background
+        { rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } } },
+        // Footer Section
+        {
+          placeholder: {
+            options: {
+              name: 'footer',
+              type: 'body',
+              x: 0.0,
+              y: 6.9,
+              w: '100%', // Extend across the full width of the slide
+              h: 0.6, // Match the height of the footer background
+              align: 'center', // Center text horizontally
+              valign: 'middle', // Center text vertically
+              color: config.footerTextColor, // White text for contrast
+              fontSize: config.footerFontSize, // Suitable size for footer text
+              fontFace: config.fontFamily, // Set font face
+            },
+            text: config.footerText, // Default footer text
+          },
+        },
+      ]
+    : [];
+
   // Define the TITLE_SLIDE MasterSlide with vertically aligned header and subheader
   pptx.defineSlideMaster({
     title: 'TITLE_SLIDE',
+    slideNumber: slideNumberConfig,
     objects: [
+      ...footerConfigs,
       {
         // Header (Section Title)
         placeholder: {
@@ -110,11 +176,12 @@ function defineMasterSlides(pptx: any) {
             y: '20%', // Positioned 20% from the top of the slide
             w: '80%', // Width adjusted to 80% of the slide width
             h: 0.75, // Fixed height for the header
-            // color: "363636", // Dark gray color for the title
             align: 'center', // Center-align the text horizontally
             valign: 'middle', // Vertically align the text to the middle
             margin: 0,
-            fontSize: 52,
+            fontSize: config.titleFontSize,
+            fontFace: config.fontFamily, // Set font face
+            color: config.textColor,
           },
           text: '(title placeholer)', // Placeholder text for the title
         },
@@ -129,10 +196,12 @@ function defineMasterSlides(pptx: any) {
             y: '35%', // Positioned 30% from the top, below the header
             w: '80%', // Width adjusted to 80% of the slide width
             h: 1.25, // Fixed height for the subheader
-            // color: "6C6C6C", // Light gray color for the subheader
             align: 'center', // Center-align the text horizontally
             valign: 'middle', // Vertically align the text to the middle
             margin: 0,
+            fontSize: config.headerFontSize,
+            fontFace: config.fontFamily, // Set font face
+            color: config.textColor,
           },
           text: '(subtitle placeholder)', // Placeholder text for the subheader
         },
@@ -142,39 +211,13 @@ function defineMasterSlides(pptx: any) {
 
   pptx.defineSlideMaster({
     title: 'MASTER_SLIDE',
-    background: { color: 'E1E1E1', transparency: 50 },
-    margin: [0.5, 0.25, 1.0, 0.25], // top, left, bottom, right
-    slideNumber: {
-      x: 0.0,
-      y: 6.9,
-      h: 0.6,
-      color: 'FFFFFF',
-      fontSize: 10,
-      align: 'center', // Center text horizontally
-      valign: 'middle', // Center text vertically
-      bold: true,
+    background: {
+      color: config.backgroundColor,
     },
+    margin: [0.5, 0.25, 1.0, 0.25], // top, left, bottom, right
+    slideNumber: slideNumberConfig,
     objects: [
-      // Footer background
-      { rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: '003b75' } } },
-      // Footer Section
-      {
-        placeholder: {
-          options: {
-            name: 'footer',
-            type: 'body',
-            x: 0.0,
-            y: 6.9,
-            w: '100%', // Extend across the full width of the slide
-            h: 0.6, // Match the height of the footer background
-            align: 'center', // Center text horizontally
-            valign: 'middle', // Center text vertically
-            color: 'FFFFFF', // White text for contrast
-            fontSize: 12, // Suitable size for footer text
-          },
-          text: '(footer text placeholder)', // Default footer text
-        },
-      },
+      ...footerConfigs,
       // Header (Title)
       {
         placeholder: {
@@ -188,8 +231,9 @@ function defineMasterSlides(pptx: any) {
             margin: 0.2,
             align: 'center',
             valign: 'middle',
-            // color: "404040",
-            // fontSize: 24, // Dynamically chosen for visibility
+            color: config.textColor,
+            fontSize: config.headerFontSize, // Dynamically chosen for visibility
+            fontFace: config.fontFamily, // Set font face
           },
           text: '(slide title placeholder)', // Default placeholder for title
         },
@@ -204,7 +248,9 @@ function defineMasterSlides(pptx: any) {
             y: '20%',
             w: '80%',
             h: '60%', // Responsive height
-            fontSize: 24, // Suitable for body text
+            color: config.textColor,
+            fontSize: config.bodyFontSize, // Suitable for body text
+            fontFace: config.fontFamily, // Set font face
           },
           text: '(supports custom placeholder text!)',
         },
@@ -213,30 +259,17 @@ function defineMasterSlides(pptx: any) {
   });
 }
 
-async function execGenSlidesFuncs(slides: any[]) {
+async function execGenSlidesFuncs(slides: any[], config: any) {
   // STEP 1: Instantiate new PptxGenJS object
   const pptx = new pptxgen();
 
-  // STEP 2: Set Presentation props (as QA test only - these are not required)
-  // pptx.title = "PptxGenJS Test Suite Presentation";
-  // pptx.subject = "PptxGenJS Test Suite Export";
-  // pptx.author = "TypingMind Custom";
-  // pptx.company = CUST_NAME;
-  // pptx.revision = "15";
-  // pptx.theme = { headFontFace: "Arial Light" };
-  // pptx.theme = { bodyFontFace: "Arial" };
+  // STEP 2: Set layout
+  pptx.layout = config.layout;
 
-  // STEP 3: Set layout
-  // LAYOUT_16x9	Yes	10 x 5.625 inches
-  // LAYOUT_16x10	No	10 x 6.25 inches
-  // LAYOUT_4x3	No	10 x 7.5 inches
-  // LAYOUT_WIDE	No	13.3 x 7.5 inches
-  pptx.layout = 'LAYOUT_WIDE';
+  // STEP 3: Create Master Slides (from the old `pptxgen.masters.js` file - `gObjPptxMasters` items)
+  defineMasterSlides(pptx, config);
 
-  // STEP 4: Create Master Slides (from the old `pptxgen.masters.js` file - `gObjPptxMasters` items)
-  defineMasterSlides(pptx);
-
-  // STEP 5: Run requested test
+  // STEP 4: Run requested test
   slides.forEach((slideData, index) => {
     const { type, title, subtitle, chartContent, content = [] } = slideData;
     if (!type || !title) {
@@ -259,7 +292,7 @@ async function execGenSlidesFuncs(slides: any[]) {
       if (content.length === 1) {
         slide.addText(content[0], { placeholder: 'body' });
       } else if (content.length > 1) {
-        const bullets = content.map((item: string) => ({
+        const bullets = content.map((item: any) => ({
           text: item,
           options: { bullet: true, valign: 'top' },
         }));
@@ -276,18 +309,18 @@ async function execGenSlidesFuncs(slides: any[]) {
       // Map content to tableData with alternating row colors and alignment
       const tableHeaders = content[0];
       const tableData = [
-        tableHeaders.map((header: string) => ({
+        tableHeaders.map((header: any) => ({
           text: header,
           options: {
             bold: true,
-            color: 'FFFFFF',
-            fill: '003b75', // Dark blue background for headers
+            color: config.tableHeaderTextColor,
+            fill: config.tableHeaderBackgroundColor,
             align: 'center',
             valign: 'middle',
           },
         })),
-        ...content.slice(1).map((row: any[], rowIndex: number) =>
-          row.map((cell) => {
+        ...content.slice(1).map((row: any, rowIndex: number) =>
+          row.map((cell: any) => {
             const cellType = detectType(cell);
             const align = getAlignment(cellType);
 
@@ -297,7 +330,7 @@ async function execGenSlidesFuncs(slides: any[]) {
                 fill: rowIndex % 2 === 0 ? 'E8F1FA' : 'DDEBF7', // Alternating row colors
                 align,
                 valign: 'middle',
-                color: '000000', // Black text
+                color: config.tableTextColor, // Black text
               },
             };
           })
@@ -377,8 +410,6 @@ async function execGenSlidesFuncs(slides: any[]) {
       } else {
         throw new Error(`Invalid chart type: ${chartType}`);
       }
-    } else {
-      throw new Error(`Invalid slide type: ${type}`);
     }
   });
 
@@ -399,7 +430,7 @@ export const powerpointGeneratorRouter: Router = (() => {
   router.use('/downloads', express.static(exportsDir));
 
   router.post('/generate', async (_req: Request, res: Response) => {
-    const { slides = [] } = _req.body;
+    const { slides = [], slideConfig = {} } = _req.body;
     if (!slides.length) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
@@ -411,7 +442,10 @@ export const powerpointGeneratorRouter: Router = (() => {
     }
 
     try {
-      const fileName = await execGenSlidesFuncs(slides);
+      const fileName = await execGenSlidesFuncs(slides, {
+        ...defaultSlideConfig,
+        ...slideConfig,
+      });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
