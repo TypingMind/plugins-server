@@ -381,7 +381,7 @@ export const powerpointGeneratorRouter: Router = (() => {
         ResponseStatus.Success,
         'File generated successfully',
         {
-          downloadUrl: `/downloads/${fileName}`,
+          downloadUrl: `/powerpoint-generator/downloads/${fileName}`,
         },
         StatusCodes.OK
       );
