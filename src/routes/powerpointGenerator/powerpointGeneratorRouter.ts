@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import express, { Request, Response, Router } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
+import cron from 'node-cron';
 import path from 'path';
 import pptxgen from 'pptxgenjs';
 
@@ -27,6 +28,40 @@ const exportsDir = path.join(__dirname, '../../..', 'powerpoint-exports');
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
 }
+
+// Cron job to delete files older than 1 hour
+cron.schedule('0 * * * *', () => {
+  const now = Date.now();
+  const oneHour = 60 * 60 * 1000;
+  // Read the files in the exports directory
+  fs.readdir(exportsDir, (err, files) => {
+    if (err) {
+      console.error(`Error reading directory ${exportsDir}:`, err);
+      return;
+    }
+
+    files.forEach((file) => {
+      const filePath = path.join(exportsDir, file);
+      fs.stat(filePath, (err, stats) => {
+        if (err) {
+          console.error(`Error getting stats for file ${filePath}:`, err);
+          return;
+        }
+
+        // Check if the file is older than 1 hour
+        if (now - stats.mtime.getTime() > oneHour) {
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error(`Error deleting file ${filePath}:`, err);
+            } else {
+              console.log(`Deleted file: ${filePath}`);
+            }
+          });
+        }
+      });
+    });
+  });
+});
 
 const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
