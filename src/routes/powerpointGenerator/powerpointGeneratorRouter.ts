@@ -93,7 +93,7 @@ function defineMasterSlides(pptx: any) {
             x: '10%', // 10% from the left side of the slide for responsiveness
             y: '35%', // Positioned 30% from the top, below the header
             w: '80%', // Width adjusted to 80% of the slide width
-            h: 0.5, // Fixed height for the subheader
+            h: 1.25, // Fixed height for the subheader
             // color: "6C6C6C", // Light gray color for the subheader
             align: 'center', // Center-align the text horizontally
             valign: 'middle', // Vertically align the text to the middle
@@ -263,7 +263,6 @@ async function execGenSlidesFuncs(slides: any[]) {
                 align,
                 valign: 'middle',
                 color: '000000', // Black text
-                bold: rowIndex === 0, // Bold headers
               },
             };
           })
