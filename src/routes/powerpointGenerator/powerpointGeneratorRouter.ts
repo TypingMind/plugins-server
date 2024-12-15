@@ -12,7 +12,6 @@ import { handleServiceResponse } from '@/common/utils/httpHandlers';
 import { PowerpointGeneratorResponseSchema } from './powerpointGeneratorModel';
 export const CUST_NAME = 'S.T.A.R. Laboratories';
 export const COMPRESS = true;
-
 export const powerpointGeneratorRegistry = new OpenAPIRegistry();
 powerpointGeneratorRegistry.register('PowerpointGenerator', PowerpointGeneratorResponseSchema);
 powerpointGeneratorRegistry.registerPath({
@@ -28,6 +27,8 @@ const exportsDir = path.join(__dirname, '../../..', 'powerpoint-exports');
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
 }
+
+const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
 // Helper function to detect number, percent, or currency
 function detectType(value: string) {
@@ -381,7 +382,7 @@ export const powerpointGeneratorRouter: Router = (() => {
         ResponseStatus.Success,
         'File generated successfully',
         {
-          downloadUrl: `/powerpoint-generator/downloads/${fileName}`,
+          downloadUrl: `${serverUrl}/powerpoint-generator/downloads/${fileName}`,
         },
         StatusCodes.OK
       );
