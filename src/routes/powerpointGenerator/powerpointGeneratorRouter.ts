@@ -73,8 +73,8 @@ const defaultSlideConfig = {
   fontFamily: 'Calibri', // Default font family for the slide, Calibri, Arial
   backgroundColor: '#FFFFFF', // Default background color
   textColor: '#000000', // Text color
-  showFooter: true, // Display footer or not
-  showSlideNumber: true, // Display slide number or not
+  showFooter: false, // Display footer or not
+  showSlideNumber: false, // Display slide number or not
   footerBackgroundColor: '#003B75', // Default background color
   footerText: 'footer text', // Footer text content.
   footerTextColor: '#FFFFFF', // Default footer color
@@ -443,8 +443,46 @@ export const powerpointGeneratorRouter: Router = (() => {
 
     try {
       const fileName = await execGenSlidesFuncs(slides, {
-        ...defaultSlideConfig,
-        ...slideConfig,
+        layout: slideConfig.layout === '' ? defaultSlideConfig.layout : slideConfig.layout, // Default: LAYOUT_WIDE, enum: LAYOUT_16x9 10 x 5.625 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_4x3 10 x 7.5 inches
+        titleFontSize: slideConfig.titleFontSize === 0 ? defaultSlideConfig.titleFontSize : slideConfig.titleFontSize, // Default: 52, Emphasize the main topic in Title Slide
+        headerFontSize:
+          slideConfig.headerFontSize === 0 ? defaultSlideConfig.headerFontSize : slideConfig.headerFontSize, // Default: 32, The slide headers in the Content Slide
+        bodyFontSize: slideConfig.bodyFontSize === 0 ? defaultSlideConfig.bodyFontSize : slideConfig.bodyFontSize, // Default: 24, The main text font size
+        fontFamily: slideConfig.fontFamily === '' ? defaultSlideConfig.fontFamily : slideConfig.fontFamily, // Default: 'Calibri', Default font family for the slide, Calibri, Arial
+        backgroundColor:
+          slideConfig.backgroundColor === '' ? defaultSlideConfig.backgroundColor : slideConfig.backgroundColor, // Default: '#FFFFFF', Default background color
+        textColor: slideConfig.textColor === '' ? defaultSlideConfig.textColor : slideConfig.textColor, // Default: '#000000', Text color
+        showFooter: slideConfig.showFooter === 0 ? defaultSlideConfig.showFooter : slideConfig.showFooter, // Default: false, Display footer or not
+        showSlideNumber:
+          slideConfig.showSlideNumber === 0 ? defaultSlideConfig.showSlideNumber : slideConfig.showSlideNumber, // Default: false, Display slide number or not
+        footerBackgroundColor:
+          slideConfig.footerBackgroundColor === ''
+            ? defaultSlideConfig.footerBackgroundColor
+            : slideConfig.footerBackgroundColor, // Default: '#003B75', Default footer background color
+        footerText: slideConfig.footerText === '' ? defaultSlideConfig.footerText : slideConfig.footerText, // Default: 'footer text', Footer text content.
+        footerTextColor:
+          slideConfig.footerTextColor === '' ? defaultSlideConfig.footerTextColor : slideConfig.footerTextColor, // Default: '#FFFFFF', Default footer text color
+        footerFontSize:
+          slideConfig.footerFontSize === 0 ? defaultSlideConfig.footerFontSize : slideConfig.footerFontSize, // Default: 10, Default footer font size
+        showTableBorder:
+          slideConfig.showTableBorder === 0 ? defaultSlideConfig.showTableBorder : slideConfig.showTableBorder, // Default: true, Show table border or not
+        tableHeaderBackgroundColor:
+          slideConfig.tableHeaderBackgroundColor === ''
+            ? defaultSlideConfig.tableHeaderBackgroundColor
+            : slideConfig.tableHeaderBackgroundColor, // Default: '#003B75', Dark blue background for headers
+        tableHeaderTextColor:
+          slideConfig.tableHeaderTextColor === ''
+            ? defaultSlideConfig.tableHeaderTextColor
+            : slideConfig.tableHeaderTextColor, // Default: '#FFFFFF', Table header text color
+        tableBorderThickness:
+          slideConfig.tableBorderThickness === 0
+            ? defaultSlideConfig.tableBorderThickness
+            : slideConfig.tableBorderThickness, // Default: 1 pt, Border thickness
+        tableBorderColor:
+          slideConfig.tableBorderColor === '' ? defaultSlideConfig.tableBorderColor : slideConfig.tableBorderColor, // Default: '#000000', Black border
+        tableFontSize: slideConfig.tableFontSize === 0 ? defaultSlideConfig.tableFontSize : slideConfig.tableFontSize, // Default: 14, Font size inside the table
+        tableTextColor:
+          slideConfig.tableTextColor === '' ? defaultSlideConfig.tableTextColor : slideConfig.tableTextColor, // Default: '#000000', Text color inside the table
       });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
