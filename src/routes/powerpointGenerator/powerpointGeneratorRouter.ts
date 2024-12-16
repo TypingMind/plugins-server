@@ -67,9 +67,9 @@ const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 // Define configurable options for layout, font size, and font family
 const defaultSlideConfig = {
   layout: 'LAYOUT_WIDE', // Default: LAYOUT_WIDE, enum: LAYOUT_16x9 10 x 5.625 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_4x3 10 x 7.5 inches
-  titleFontSize: 52, // Emphasize the main topic in Title Slide
+  titleFontSize: 44, // Emphasize the main topic in Title Slide
   headerFontSize: 32, // The slide headers in the Content Slide
-  bodyFontSize: 24, // The main text font size
+  bodyFontSize: 22, // The main text font size
   fontFamily: 'Calibri', // Default font family for the slide, Calibri, Arial
   backgroundColor: '#FFFFFF', // Default background color
   textColor: '#000000', // Text color
@@ -134,56 +134,6 @@ function defineMasterSlides(pptx: any, config: any) {
         }
       : undefined;
 
-  // Init footer config objects
-  let footerBackgroundObject, footerTextObject;
-  if (config.showFooter) {
-    footerBackgroundObject = {
-      rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } },
-    };
-
-    footerTextObject = {
-      placeholder: {
-        options: {
-          name: 'footer',
-          ype: 'body',
-          x: 0.0,
-          y: 6.9,
-          w: '100%', // Extend across the full width of the slide
-          h: 0.6, // Match the height of the footer background
-          align: 'center', // Center text horizontally
-          valign: 'middle', // Center text vertically
-          color: config.footerTextColor, // White text for contrast
-          fontSize: config.footerFontSize, // Suitable size for footer text
-          fontFace: config.fontFamily, // Set font face
-        },
-        text: config.footerText, // Default footer text
-      },
-    };
-  } else {
-    footerBackgroundObject = {
-      rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: 'FFFFFF' } },
-    };
-
-    footerTextObject = {
-      placeholder: {
-        options: {
-          name: 'footer',
-          ype: 'body',
-          x: 0.0,
-          y: 6.9,
-          w: '100%', // Extend across the full width of the slide
-          h: 0.6, // Match the height of the footer background
-          align: 'center', // Center text horizontally
-          valign: 'middle', // Center text vertically
-          color: config.footerTextColor, // White text for contrast
-          fontSize: config.footerFontSize, // Suitable size for footer text
-          fontFace: config.fontFamily, // Set font face
-        },
-        text: '', // Default footer text
-      },
-    };
-  }
-
   // Define the TITLE_SLIDE MasterSlide with vertically aligned header and subheader
   pptx.defineSlideMaster({
     title: 'TITLE_SLIDE',
@@ -229,9 +179,31 @@ function defineMasterSlides(pptx: any, config: any) {
           text: '(subtitle placeholder)', // Placeholder text for the subheader
         },
       },
-      // Footer
-      footerBackgroundObject,
-      footerTextObject,
+      // Footer background
+      config.showFooter
+        ? { rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } } }
+        : {},
+      // Footer Text
+      config.showFooter
+        ? {
+            placeholder: {
+              options: {
+                name: 'footer',
+                type: 'body',
+                x: 0.0,
+                y: 6.9,
+                w: '100%', // Extend across the full width of the slide
+                h: 0.6, // Match the height of the footer background
+                align: 'center', // Center text horizontally
+                valign: 'middle', // Center text vertically
+                color: config.footerTextColor, // White text for contrast
+                fontSize: config.footerFontSize, // Suitable size for footer text
+                fontFace: config.fontFamily, // Set font face
+              },
+              text: config.footerText, // Default footer text
+            },
+          }
+        : {},
     ],
   });
 
@@ -272,7 +244,7 @@ function defineMasterSlides(pptx: any, config: any) {
             x: '10%',
             y: '20%',
             w: '80%',
-            h: '60%', // Responsive height
+            h: config.showFooter ? '60%' : '70%', // Responsive height
             color: config.textColor,
             fontSize: config.bodyFontSize, // Suitable for body text
             fontFace: config.fontFamily, // Set font face
@@ -280,9 +252,31 @@ function defineMasterSlides(pptx: any, config: any) {
           text: '(supports custom placeholder text!)',
         },
       },
-      // Footer
-      footerBackgroundObject,
-      footerTextObject,
+      // Footer background
+      config.showFooter
+        ? { rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } } }
+        : {},
+      // Footer Text
+      config.showFooter
+        ? {
+            placeholder: {
+              options: {
+                name: 'footer',
+                type: 'body',
+                x: 0.0,
+                y: 6.9,
+                w: '100%', // Extend across the full width of the slide
+                h: 0.6, // Match the height of the footer background
+                align: 'center', // Center text horizontally
+                valign: 'middle', // Center text vertically
+                color: config.footerTextColor, // White text for contrast
+                fontSize: config.footerFontSize, // Suitable size for footer text
+                fontFace: config.fontFamily, // Set font face
+              },
+              text: config.footerText, // Default footer text
+            },
+          }
+        : {},
     ],
   });
 }
@@ -365,15 +359,19 @@ async function execGenSlidesFuncs(slides: any[], config: any) {
         ),
       ];
 
+      const tableBorderConfigs = config.showTableBorder
+        ? {
+            pt: config.tableBorderThickness, // Border thickness
+            color: config.tableBorderColor, // Black border
+          }
+        : undefined;
+
       slide.addTable(tableData, {
         x: '10%', // Position aligned with placeholder
         y: '20%',
         w: '80%', // Table width
         h: '60%', // Table height
-        border: {
-          pt: 1, // Border thickness
-          color: '000000', // Black border
-        },
+        border: tableBorderConfigs,
         fontSize: 14, // Font size for table text
         placeholder: 'body',
       } as any);
@@ -480,9 +478,8 @@ export const powerpointGeneratorRouter: Router = (() => {
         backgroundColor:
           slideConfig.backgroundColor === '' ? defaultSlideConfig.backgroundColor : slideConfig.backgroundColor, // Default: '#FFFFFF', Default background color
         textColor: slideConfig.textColor === '' ? defaultSlideConfig.textColor : slideConfig.textColor, // Default: '#000000', Text color
-        showFooter: slideConfig.showFooter === 0 ? defaultSlideConfig.showFooter : slideConfig.showFooter, // Default: false, Display footer or not
-        showSlideNumber:
-          slideConfig.showSlideNumber === 0 ? defaultSlideConfig.showSlideNumber : slideConfig.showSlideNumber, // Default: false, Display slide number or not
+        showFooter: slideConfig.showFooter ?? defaultSlideConfig.showFooter, // Default: false, Display footer or not
+        showSlideNumber: slideConfig.showSlideNumber ?? defaultSlideConfig.showSlideNumber, // Default: false, Display slide number or not
         footerBackgroundColor:
           slideConfig.footerBackgroundColor === ''
             ? defaultSlideConfig.footerBackgroundColor
@@ -492,8 +489,7 @@ export const powerpointGeneratorRouter: Router = (() => {
           slideConfig.footerTextColor === '' ? defaultSlideConfig.footerTextColor : slideConfig.footerTextColor, // Default: '#FFFFFF', Default footer text color
         footerFontSize:
           slideConfig.footerFontSize === 0 ? defaultSlideConfig.footerFontSize : slideConfig.footerFontSize, // Default: 10, Default footer font size
-        showTableBorder:
-          slideConfig.showTableBorder === 0 ? defaultSlideConfig.showTableBorder : slideConfig.showTableBorder, // Default: true, Show table border or not
+        showTableBorder: slideConfig.showTableBorder ?? defaultSlideConfig.showTableBorder, // Default: true, Show table border or not
         tableHeaderBackgroundColor:
           slideConfig.tableHeaderBackgroundColor === ''
             ? defaultSlideConfig.tableHeaderBackgroundColor
