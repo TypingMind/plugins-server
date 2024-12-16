@@ -134,38 +134,37 @@ function defineMasterSlides(pptx: any, config: any) {
         }
       : undefined;
 
-  const footerConfigs = config.showFooter
-    ? [
-        // Footer background
-        { rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } } },
-        // Footer Section
-        {
-          placeholder: {
-            options: {
-              name: 'footer',
-              type: 'body',
-              x: 0.0,
-              y: 6.9,
-              w: '100%', // Extend across the full width of the slide
-              h: 0.6, // Match the height of the footer background
-              align: 'center', // Center text horizontally
-              valign: 'middle', // Center text vertically
-              color: config.footerTextColor, // White text for contrast
-              fontSize: config.footerFontSize, // Suitable size for footer text
-              fontFace: config.fontFamily, // Set font face
-            },
-            text: config.footerText, // Default footer text
-          },
-        },
-      ]
-    : [];
+  // Init footer config objects
+  const footerBackgroundObject = {
+    rect: { x: 0.0, y: 6.9, w: '100%', h: 0.6, fill: { color: config.footerBackgroundColor } },
+  };
+  const footerTextObject = {
+    placeholder: {
+      options: {
+        name: 'footer',
+        ype: 'body',
+        x: 0.0,
+        y: 6.9,
+        w: '100%', // Extend across the full width of the slide
+        h: 0.6, // Match the height of the footer background
+        align: 'center', // Center text horizontally
+        valign: 'middle', // Center text vertically
+        color: config.footerTextColor, // White text for contrast
+        fontSize: config.footerFontSize, // Suitable size for footer text
+        fontFace: config.fontFamily, // Set font face
+      },
+      text: config.footerText, // Default footer text
+    },
+  };
 
   // Define the TITLE_SLIDE MasterSlide with vertically aligned header and subheader
   pptx.defineSlideMaster({
     title: 'TITLE_SLIDE',
     slideNumber: slideNumberConfig,
     objects: [
-      ...footerConfigs,
+      // Footer background
+      config.showFooter ? footerBackgroundObject : undefined,
+      config.showFooter ? footerTextObject : undefined,
       {
         // Header (Section Title)
         placeholder: {
@@ -217,7 +216,9 @@ function defineMasterSlides(pptx: any, config: any) {
     margin: [0.5, 0.25, 1.0, 0.25], // top, left, bottom, right
     slideNumber: slideNumberConfig,
     objects: [
-      ...footerConfigs,
+      // Footer background
+      config.showFooter ? footerBackgroundObject : undefined,
+      config.showFooter ? footerTextObject : undefined,
       // Header (Title)
       {
         placeholder: {
