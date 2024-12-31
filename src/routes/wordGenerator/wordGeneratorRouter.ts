@@ -217,7 +217,7 @@ const getHeadingLevel = (level: any) => {
     case 4:
       return HeadingLevel.HEADING_4;
     default:
-      throw HeadingLevel.HEADING_5;
+      throw Error(`Unsupported heading with input level: ${level}`);
   }
 };
 
@@ -345,9 +345,9 @@ const generateSectionContent = (section: any, config: any) => {
     };
   }
 
-  const sectionContent = [
-    // Section Heading with index
-    new Paragraph({
+  let headingContent;
+  if (section.heading) {
+    headingContent = new Paragraph({
       children: [new TextRun(section.heading)],
       heading: getHeadingLevel(section.headingLevel),
       numbering: numberingConfig,
@@ -355,7 +355,12 @@ const generateSectionContent = (section: any, config: any) => {
         before: SPACING_CONFIG.heading.before * 20,
         after: SPACING_CONFIG.heading.after * 20,
       },
-    }),
+    });
+  }
+
+  const sectionContent = [
+    // Section Heading with index
+    headingContent,
     ...sectionContents,
     // Process sub-sections if they exist
     ...(section.subSections
