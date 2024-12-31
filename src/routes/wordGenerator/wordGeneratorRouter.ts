@@ -6,6 +6,7 @@ import {
   FootnoteReferenceRun,
   Header,
   HeadingLevel,
+  LeaderType,
   LevelFormat,
   Packer,
   PageNumber,
@@ -13,6 +14,7 @@ import {
   Paragraph,
   Table,
   TableCell,
+  TableOfContents,
   TableRow,
   TextRun,
   WidthType,
@@ -82,8 +84,24 @@ cron.schedule('0 * * * *', () => {
 const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
 const FONT_CONFIG = {
-  size: 12, // Font size in points
+  size: 12, // Font size in point
+  titleSize: 32, // Title font size in point
+  tableOfContentSize: 16, // Table of content font size in point
   family: 'Arial', // Font family
+};
+
+const SPACING_CONFIG = {
+  // unit of inches
+  title: {
+    after: 12,
+  },
+  tableOfContent: {
+    after: 6,
+  },
+  heading: {
+    before: 4,
+    after: 4,
+  },
 };
 
 const LINE_HEIGHT_CONFIG: any = {
@@ -333,6 +351,10 @@ const generateSectionContent = (section: any, config: any) => {
       children: [new TextRun(section.heading)],
       heading: getHeadingLevel(section.headingLevel),
       numbering: numberingConfig,
+      spacing: {
+        before: SPACING_CONFIG.heading.before * 20,
+        after: SPACING_CONFIG.heading.after * 20,
+      },
     }),
     ...sectionContents,
     // Process sub-sections if they exist
@@ -359,6 +381,7 @@ async function execGenWordFuncs(
     fontSize: number;
     lineHeight: number;
     margins: string;
+    showTableOfContent: boolean;
   }
 ) {
   let headerConfigs = {};
@@ -414,6 +437,33 @@ async function execGenWordFuncs(
     numberingConfig.push(selectedNumberingOption);
   }
 
+  const tableOfContentConfigs = [];
+  if (config.showTableOfContent) {
+    tableOfContentConfigs.push(
+      new Paragraph({
+        children: [
+          new TextRun({
+            text: 'Table of Contents',
+            bold: true,
+            size: FONT_CONFIG.tableOfContentSize * 2,
+          }),
+        ],
+        spacing: { after: SPACING_CONFIG.tableOfContent.after * 20 },
+      })
+    );
+    tableOfContentConfigs.push(
+      new TableOfContents({
+        stylesWithLevels: [
+          { style: 'Heading1', level: 1 },
+          { style: 'Heading2', level: 2 },
+          { style: 'Heading3', level: 3 },
+          { style: 'Heading4', level: 4 },
+        ],
+        leader: LeaderType.DOT, // Dot leader
+      } as any)
+    );
+  }
+
   // Create the document based on JSON data
   const doc = new Document({
     styles: {
@@ -448,13 +498,13 @@ async function execGenWordFuncs(
             children: [
               new TextRun({
                 text: data.title,
-                size: 36 * 2, // Title size (36pt)
+                size: FONT_CONFIG.titleSize * 2,
               }),
             ],
             heading: HeadingLevel.TITLE,
-            spacing: { after: 12 * 20 }, // 12pt * 20 = 240 twips
+            spacing: { after: SPACING_CONFIG.title.after * 20 }, // 12 inches * 20 = 240 twips
           }),
-
+          ...tableOfContentConfigs,
           // Generate all sections and sub-sections
           ...data.sections.flatMap((section) =>
             generateSectionContent(section, { ...config, numberingReference: selectedNumberingOption?.reference })
@@ -482,7 +532,6 @@ export const wordGeneratorRouter: Router = (() => {
   router.use('/downloads', express.static(exportsDir));
 
   router.post('/generate', async (_req: Request, res: Response) => {
-    console.log('Go here');
     const { title, sections = [], header, footer, wordConfig = {} } = _req.body;
     if (!sections.length) {
       const validateServiceResponse = new ServiceResponse(
@@ -503,6 +552,7 @@ export const wordGeneratorRouter: Router = (() => {
         fontSize: wordConfig.fontSize ? wordConfig.fontSize : FONT_CONFIG.size,
         lineHeight: wordConfig.lineHeight ? LINE_HEIGHT_CONFIG[wordConfig.lineHeight] : LINE_HEIGHT_CONFIG['1.15'],
         margins: wordConfig.margins ? PAGE_MARGINS[wordConfig.margins] : PAGE_MARGINS.NORMAL,
+        showTableOfContent: wordConfig.showTableOfContent ?? false,
       };
 
       const fileName = await execGenWordFuncs(
