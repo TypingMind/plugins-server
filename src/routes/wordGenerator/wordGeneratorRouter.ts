@@ -568,7 +568,7 @@ export const wordGeneratorRouter: Router = (() => {
 
     try {
       const wordConfigs = {
-        numberingReference: wordConfig.numberingReference ?? '',
+        numberingReference: wordConfig.showNumberingInHeader ? wordConfig.numberingReference : '',
         showPageNumber: wordConfig.showPageNumber ?? false,
         pageOrientation: wordConfig.pageOrientation ? wordConfig.pageOrientation : PageOrientation.PORTRAIT,
         fontFamily: wordConfig.fontFamily ? wordConfig.fontFamily : FONT_CONFIG.family,
