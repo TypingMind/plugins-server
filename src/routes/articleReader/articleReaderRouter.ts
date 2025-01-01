@@ -64,8 +64,20 @@ export const articleReaderRouter: Router = (() => {
 
   articleReaderRegistry.registerPath({
     method: 'get',
-    path: '/content',
+    path: '/get-content',
     tags: ['Article Reader'],
+    // Add the query parameter 'url' to the documentation
+    parameters: [
+      {
+        name: 'url',
+        in: 'query',
+        required: true,
+        schema: {
+          type: 'string',
+        },
+        description: 'The URL of the article to fetch',
+      },
+    ],
     responses: createApiResponse(ArticleReaderSchema, 'Success'),
   });
 
@@ -73,22 +85,34 @@ export const articleReaderRouter: Router = (() => {
     const { url } = _req.query;
 
     if (typeof url !== 'string') {
-      return new ServiceResponse(ResponseStatus.Failed, 'URL must be a string', null, StatusCodes.BAD_REQUEST);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        'URL must be a string',
+        null,
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(serviceResponse, res);
     }
 
     try {
       const content = await fetchAndCleanContent(url);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
-        'Service is healthy',
+        'Content fetched successfully',
         content,
         StatusCodes.OK
       );
       handleServiceResponse(serviceResponse, res);
     } catch (error) {
-      console.error(`Error fetching content ${(error as Error).message}`);
-      const errorMessage = `Error fetching content $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      console.error(`Error fetching content: ${(error as Error).message}`);
+      const errorMessage = `Error fetching content: ${(error as Error).message}`;
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        errorMessage,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      handleServiceResponse(serviceResponse, res);
     }
   });
 

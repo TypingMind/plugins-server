@@ -17,15 +17,26 @@ export const transcriptRouter: Router = (() => {
 
   transcriptRegistry.registerPath({
     method: 'get',
-    path: '/transcript',
-    tags: ['Youtube Transcript'],
+    path: '/youtube-transcript',
+    tags: ['YouTube Transcript'],
+    parameters: [
+      {
+        name: 'query',
+        in: 'query',
+        description: 'The YouTube video URL to fetch the transcript for.',
+        required: true,
+        schema: {
+          type: 'string',
+        },
+      },
+    ],
     responses: createApiResponse(TranscriptSchema, 'Success'),
   });
 
   router.get('/', async (_req: Request, res: Response) => {
-    const { videoId } = _req.query;
+    const videoUrl: string = _req.query.query as string;
 
-    if (!videoId) {
+    if (!videoUrl) {
       return new ServiceResponse(
         ResponseStatus.Failed,
         'Please provide a videoId query parameter.',
@@ -35,12 +46,15 @@ export const transcriptRouter: Router = (() => {
     }
 
     try {
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId as string);
+      const transcript = await YoutubeTranscript.fetchTranscript(videoUrl as string);
       const textOnly = transcript.map((entry) => entry.text).join(' ');
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Service is healthy',
-        { textOnly },
+        {
+          videoUrlOrId: videoUrl,
+          textOnly,
+        },
         StatusCodes.OK
       );
       handleServiceResponse(serviceResponse, res);

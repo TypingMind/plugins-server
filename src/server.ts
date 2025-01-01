@@ -35,7 +35,7 @@ app.use(requestLogger());
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use('/images', express.static('public/images'));
-app.use('/transcript', transcriptRouter);
+app.use('/youtube-transcript', transcriptRouter);
 app.use('/get-content', articleReaderRouter);
 app.use('/powerpoint-generator', powerpointGeneratorRouter);
 // Swagger UI
