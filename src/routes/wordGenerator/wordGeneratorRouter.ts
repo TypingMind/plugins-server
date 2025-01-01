@@ -298,7 +298,19 @@ const generateSectionContent = (section: any, config: any) => {
     const results = [];
     // Handle paragraph content
     if (child.type === 'paragraph') {
-      const paragraphChildren = [new TextRun(child.text)];
+      const paragraphChildren = [];
+      if (child.text.includes('\n')) {
+        // Split the text by newline characters
+        const lines = child.text.split('\n');
+        // Log each line
+        lines.forEach((line: string) => {
+          paragraphChildren.push(new TextRun({ text: line, break: 1 }));
+        });
+        paragraphChildren.push(...lines);
+      } else {
+        paragraphChildren.push(new TextRun(child.text));
+      }
+
       if (child.footnote) {
         paragraphChildren.push(new FootnoteReferenceRun(child.footnote.id));
       }
@@ -325,6 +337,12 @@ const generateSectionContent = (section: any, config: any) => {
         new Paragraph({
           text: '',
           pageBreakBefore: true,
+        })
+      );
+    } else if (child.type === 'emptyLine') {
+      results.push(
+        new Paragraph({
+          text: '',
         })
       );
     } else {
