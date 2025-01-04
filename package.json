@@ -25,6 +25,7 @@
     "body-parser": "^1.20.2",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
+    "docx": "^9.1.0",
     "dotenv": "^16.4.5",
     "envalid": "^8.0.0",
     "express": "^4.19.2",
