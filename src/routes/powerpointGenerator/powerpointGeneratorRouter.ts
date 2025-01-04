@@ -6,18 +6,24 @@ import cron from 'node-cron';
 import path from 'path';
 import pptxgen from 'pptxgenjs';
 
+import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
-import { PowerpointGeneratorResponseSchema } from './powerpointGeneratorModel';
+import { PowerpointGeneratorRequestBodySchema, PowerpointGeneratorResponseSchema } from './powerpointGeneratorModel';
 export const COMPRESS = true;
+
+// API Doc definition
 export const powerpointGeneratorRegistry = new OpenAPIRegistry();
 powerpointGeneratorRegistry.register('PowerpointGenerator', PowerpointGeneratorResponseSchema);
 powerpointGeneratorRegistry.registerPath({
   method: 'post',
-  path: '/generate',
-  tags: ['Generate Powerpoint Presentation'],
+  path: '/powerpoint-generator/generate',
+  tags: ['Powerpoint Generator'],
+  request: {
+    body: createApiRequestBody(PowerpointGeneratorRequestBodySchema, 'application/json'),
+  },
   responses: createApiResponse(PowerpointGeneratorResponseSchema, 'Success'),
 });
 
