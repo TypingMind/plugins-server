@@ -25,18 +25,22 @@ import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
 
+import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
-import { WordGeneratorResponseSchema } from './wordGeneratorModel';
+import { WordGeneratorRequestBodySchema, WordGeneratorResponseSchema } from './wordGeneratorModel';
 export const COMPRESS = true;
 export const wordGeneratorRegistry = new OpenAPIRegistry();
 wordGeneratorRegistry.register('WordGenerator', WordGeneratorResponseSchema);
 wordGeneratorRegistry.registerPath({
   method: 'post',
-  path: '/generate',
-  tags: ['Generate Word file'],
+  path: '/word-generator/generate',
+  tags: ['Word Generator'],
+  request: {
+    body: createApiRequestBody(WordGeneratorRequestBodySchema, 'application/json'),
+  },
   responses: createApiResponse(WordGeneratorResponseSchema, 'Success'),
 });
 
