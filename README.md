@@ -23,10 +23,12 @@ Plugins Server is open-sourced and is intended to be self-hosted by individual u
 Two simple steps:
 
 1. Deploy this repo on any hosting provider that supports NodeJS (e.g., Render.com, AWS, etc.). (We also provide a Dockerfile for easy deployment on Docker-supported hosting providers).
-   👉 Follow this guide for detailed instructions: [How to Deploy Plugins Server on Render.com](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)
+
+👉 Follow this guide for detailed instructions: [How to Deploy Plugins Server on Render.com](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)
 
 2. Install your desired TypingMind's plugin. Update the server endpoint URL in your Settings page.
-   👉 Follow this guide for setting up a TypingMind's plugin [Build a TypingMind Plugin](https://docs.typingmind.com/plugins/build-a-typingmind-plugin)
+
+👉 Follow this guide for setting up a TypingMind's plugin [Build a TypingMind Plugin](https://docs.typingmind.com/plugins/build-a-typingmind-plugin)
 
 ## List of available endpoints
 
