@@ -26,9 +26,9 @@ Two simple steps:
 
 2. Install your desired TypingMind's plugin. Update the server endpoint URL in your Settings page.
 
-👉 Follow this guide for detailed instructions: [How to Deploy Plugins Server on Render.com](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)
+Follow this guide for detailed instructions: [How to Deploy Plugins Server on Render.com](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)
 
-👉 Follow this guide for setting up a TypingMind's plugin [Build a TypingMind Plugin](https://docs.typingmind.com/plugins/build-a-typingmind-plugin)
+Follow this guide for setting up a TypingMind's plugin: [Build a TypingMind Plugin](https://docs.typingmind.com/plugins/build-a-typingmind-plugin)
 
 ## List of available endpoints
 
