@@ -67,12 +67,12 @@ export const webPageReaderRouter: Router = (() => {
     path: '/web-page-reader/get-content',
     tags: ['Web Page Reader'],
     request: {
-      params: WebPageReaderRequestParamSchema,
+      query: WebPageReaderRequestParamSchema,
     },
     responses: createApiResponse(WebPageReaderResponseSchema, 'Success'),
   });
 
-  router.get('/', async (_req: Request, res: Response) => {
+  router.get('/get-content', async (_req: Request, res: Response) => {
     const { url } = _req.query;
 
     if (typeof url !== 'string') {

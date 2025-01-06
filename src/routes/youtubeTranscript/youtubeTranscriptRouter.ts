@@ -7,22 +7,25 @@ import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
-import { TranscriptSchema } from './transcriptModel';
+import { YoutubeTranscriptRequestParamSchema, YoutubeTranscriptResponseSchema } from './youtubeTranscriptModel';
 
-export const transcriptRegistry = new OpenAPIRegistry();
-transcriptRegistry.register('Transcript', TranscriptSchema);
+export const youtubeTranscriptRegistry = new OpenAPIRegistry();
+youtubeTranscriptRegistry.register('YoutubeTranscript', YoutubeTranscriptResponseSchema);
 
-export const transcriptRouter: Router = (() => {
+export const youtubeTranscriptRouter: Router = (() => {
   const router = express.Router();
 
-  transcriptRegistry.registerPath({
+  youtubeTranscriptRegistry.registerPath({
     method: 'get',
-    path: '/transcript',
+    path: '/youtube-transcript/get-transcript',
     tags: ['Youtube Transcript'],
-    responses: createApiResponse(TranscriptSchema, 'Success'),
+    request: {
+      query: YoutubeTranscriptRequestParamSchema,
+    },
+    responses: createApiResponse(YoutubeTranscriptResponseSchema, 'Success'),
   });
 
-  router.get('/', async (_req: Request, res: Response) => {
+  router.get('/get-transcript', async (_req: Request, res: Response) => {
     const { videoId } = _req.query;
 
     if (!videoId) {
