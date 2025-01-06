@@ -13,7 +13,7 @@ import { healthCheckRouter } from '@/routes/healthCheck/healthCheckRouter';
 import { powerpointGeneratorRouter } from './routes/powerpointGenerator/powerpointGeneratorRouter';
 import { webPageReaderRouter } from './routes/webPageReader/webPageReaderRouter';
 import { wordGeneratorRouter } from './routes/wordGenerator/wordGeneratorRouter';
-import { transcriptRouter } from './routes/youtubeTranscript/transcriptRouter';
+import { youtubeTranscriptRouter } from './routes/youtubeTranscript/youtubeTranscriptRouter';
 const logger = pino({ name: 'server start' });
 const app: Express = express();
 
@@ -36,7 +36,7 @@ app.use(requestLogger());
 // Routes
 app.use('/health-check', healthCheckRouter);
 app.use('/images', express.static('public/images'));
-app.use('/transcript', transcriptRouter);
+app.use('/youtube-transcript', youtubeTranscriptRouter);
 app.use('/web-page-reader', webPageReaderRouter);
 app.use('/powerpoint-generator', powerpointGeneratorRouter);
 app.use('/word-generator', wordGeneratorRouter);
