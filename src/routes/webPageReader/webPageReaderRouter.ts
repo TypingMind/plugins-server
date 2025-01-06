@@ -83,7 +83,7 @@ export const webPageReaderRouter: Router = (() => {
       const content = await fetchAndCleanContent(url);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
-        'Service is healthy',
+        'Content fetched successfully',
         content,
         StatusCodes.OK
       );
