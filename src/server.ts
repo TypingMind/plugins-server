@@ -10,8 +10,8 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { healthCheckRouter } from '@/routes/healthCheck/healthCheckRouter';
 
-import { articleReaderRouter } from './routes/articleReader/articleReaderRouter';
 import { powerpointGeneratorRouter } from './routes/powerpointGenerator/powerpointGeneratorRouter';
+import { webPageReaderRouter } from './routes/webPageReader/webPageReaderRouter';
 import { wordGeneratorRouter } from './routes/wordGenerator/wordGeneratorRouter';
 import { transcriptRouter } from './routes/youtubeTranscript/transcriptRouter';
 const logger = pino({ name: 'server start' });
@@ -37,7 +37,7 @@ app.use(requestLogger());
 app.use('/health-check', healthCheckRouter);
 app.use('/images', express.static('public/images'));
 app.use('/transcript', transcriptRouter);
-app.use('/get-content', articleReaderRouter);
+app.use('/web-page-reader', webPageReaderRouter);
 app.use('/powerpoint-generator', powerpointGeneratorRouter);
 app.use('/word-generator', wordGeneratorRouter);
 // Swagger UI
