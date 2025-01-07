@@ -42,7 +42,7 @@ export const youtubeTranscriptRouter: Router = (() => {
       const textOnly = transcript.map((entry) => entry.text).join(' ');
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
-        'Service is healthy',
+        'Transcript fetched successfully',
         { textOnly },
         StatusCodes.OK
       );
