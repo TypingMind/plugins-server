@@ -4,6 +4,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
+import XLSX from 'xlsx';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -68,9 +69,79 @@ cron.schedule('0 * * * *', () => {
 
 const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
-async function execGenExcelFuncs() {
-  // TOOD: Implement code logic here
-  const fileName = `excel-file-${new Date().toISOString().replace(/\D/gi, '')}.docx`;
+interface Table {
+  startCell: string;
+  rows: string[][];
+  columns?: string[];
+  sorting?: { column: string; order: 'asc' | 'desc' };
+  formulas?: { column: string; formula: string }[];
+  filtering?: { column: string; criteria: string }[];
+  skipHeader?: boolean;
+}
+
+interface SheetData {
+  sheetName: string;
+  tables: Table[];
+}
+
+export function execGenExcelFuncs(sheetsData: SheetData[]): string {
+  const workbook = XLSX.utils.book_new();
+
+  sheetsData.forEach(({ sheetName, tables }) => {
+    const worksheet = XLSX.utils.aoa_to_sheet([]);
+
+    tables.forEach(({ startCell, rows, columns, skipHeader, sorting, formulas, filtering }) => {
+      const decodedCell = XLSX.utils.decode_cell(startCell);
+      const startRow = decodedCell.r; // Row index (0-based)
+      const startCol = decodedCell.c; // Column index (0-based)
+
+      let rowIndex = 0; // Reset rowIndex for each table
+
+      // Add column headers if not skipped
+      if (!skipHeader && columns) {
+        XLSX.utils.sheet_add_aoa(worksheet, [columns], { origin: { c: startCol, r: startRow + rowIndex } });
+        rowIndex++; // Increment row index after adding headers
+      }
+
+      // Add rows
+      XLSX.utils.sheet_add_aoa(worksheet, rows, { origin: { c: startCol, r: startRow + rowIndex } });
+      rowIndex += rows.length; // Increment row index by the number of rows added
+
+      // Apply sorting
+      if (sorting) {
+        const columnIndex = sorting.column.charCodeAt(0) - 65; // Convert 'A' to 0, 'B' to 1, etc.
+        rows.sort((a, b) =>
+          sorting.order === 'asc'
+            ? a[columnIndex].localeCompare(b[columnIndex])
+            : b[columnIndex].localeCompare(a[columnIndex])
+        );
+      }
+
+      // Apply formulas
+      if (formulas) {
+        formulas.forEach(({ column, formula }) => {
+          const colIndex = XLSX.utils.decode_col(column);
+          rows.forEach((_, rowIdx) => {
+            const cellRef = XLSX.utils.encode_cell({ c: colIndex, r: startRow + rowIdx + (skipHeader ? 0 : 1) }); // Adjust row for header
+            worksheet[cellRef] = { t: 'n', f: formula };
+          });
+        });
+      }
+
+      // Apply filtering (not natively supported in XLSX; requires client-side configuration)
+      if (filtering) {
+        console.warn('Filtering is not implemented in this version.');
+      }
+    });
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+  });
+
+  const fileName = `excel-file-${new Date().toISOString().replace(/\D/gi, '')}.xlsx`;
+  const filePath = path.join(exportsDir, fileName);
+
+  XLSX.writeFile(workbook, filePath);
+
   return fileName;
 }
 
@@ -80,8 +151,8 @@ export const excelGeneratorRouter: Router = (() => {
   router.use('/downloads', express.static(exportsDir));
 
   router.post('/generate', async (_req: Request, res: Response) => {
-    const { sheets = [] } = _req.body; // TODO: extract excel config object from request body
-    if (!sheets.length) {
+    const { sheetsData } = _req.body; // TODO: extract excel config object from request body
+    if (!sheetsData.length) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
         '[Validation Error] Sheets data is required!',
@@ -92,7 +163,7 @@ export const excelGeneratorRouter: Router = (() => {
     }
 
     try {
-      const fileName = await execGenExcelFuncs();
+      const fileName = execGenExcelFuncs(sheetsData);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
