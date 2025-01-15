@@ -76,11 +76,29 @@ interface SheetData {
     startCell: string;
     rows: any[][];
     columns: { name: string; type: string; format: string }[]; // types that have format, number, percent, currency
-    skipHeader?: boolean;
-    sorting?: { column: string; order: 'asc' | 'desc' };
-    filtering?: boolean;
+    skipHeader: boolean;
   }[];
 }
+
+interface ExcelConfig {
+  fontFamily: string;
+  titleFontSize: number;
+  headerFontSize: number;
+  fontSize: number;
+  autoFilter: boolean;
+  borderStyle: ExcelJS.BorderStyle; // thin, double, dashed, thick
+  wrapText: boolean;
+}
+
+const DEFAULT_EXCEL_CONFIGS: ExcelConfig = {
+  fontFamily: 'Calibri',
+  titleFontSize: 16,
+  headerFontSize: 11,
+  fontSize: 11,
+  autoFilter: false,
+  wrapText: false,
+  borderStyle: 'thin',
+};
 
 // Helper function to convert column letter (e.g., 'A') to column index (e.g., 1)
 function columnLetterToNumber(letter: string): number {
@@ -123,13 +141,45 @@ function autoFitColumns(
   }
 }
 
-export function execGenExcelFuncs(sheetsData: SheetData[]): string {
+export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelConfig): string {
   const workbook = new ExcelJS.Workbook();
+  const borderConfigs = {
+    top: { style: excelConfigs.borderStyle },
+    left: { style: excelConfigs.borderStyle },
+    bottom: { style: excelConfigs.borderStyle },
+    right: { style: excelConfigs.borderStyle },
+  };
+  const titleAlignmentConfigs: any = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: excelConfigs.wrapText,
+  };
+  const titleFontConfigs: any = {
+    name: excelConfigs.fontFamily,
+    bold: true,
+    size: excelConfigs.titleFontSize,
+  };
+  const headerAligmentConfigs: any = {
+    wrapText: excelConfigs.wrapText,
+    horizontal: 'center',
+    vertical: 'middle',
+  };
+  const headerFontConfigs: any = {
+    name: excelConfigs.fontFamily,
+    bold: true,
+    size: excelConfigs.headerFontSize,
+  };
+  const cellAlignmentConfigs: any = {
+    wrapText: excelConfigs.wrapText,
+  };
+  const cellFontConfigs: any = {
+    name: excelConfigs.fontFamily,
+    size: excelConfigs.fontSize,
+  };
 
   sheetsData.forEach(({ sheetName, tables }) => {
     const worksheet = workbook.addWorksheet(sheetName);
-
-    tables.forEach(({ startCell, title, rows, columns, skipHeader, sorting, filtering }) => {
+    tables.forEach(({ startCell, title, rows, columns, skipHeader }) => {
       const startCol = columnLetterToNumber(startCell[0]); // Convert column letter to index (e.g., 'A' -> 1)
       const startRow = parseInt(startCell.slice(1)); // Extract the row number (e.g., 'A1' -> 1)
       let rowIndex = startRow; // Set the initial row index to startRow for each table
@@ -139,15 +189,9 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
         const startCell = worksheet.getCell(rowIndex, startCol);
         startCell.value = title;
         worksheet.mergeCells(rowIndex, startCol, rowIndex, startCol + columns.length - 1);
-        startCell.alignment = { horizontal: 'center', vertical: 'middle' };
-        startCell.font = { bold: true };
-        // Apply borders to the header cell
-        startCell.border = {
-          top: { style: 'thin' },
-          left: { style: 'thin' },
-          bottom: { style: 'thin' },
-          right: { style: 'thin' },
-        };
+        startCell.alignment = titleAlignmentConfigs;
+        startCell.font = titleFontConfigs;
+        startCell.border = borderConfigs;
         rowIndex++; // Move to the next row
       }
 
@@ -156,15 +200,9 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
         columns.forEach((col, colIdx) => {
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           cell.value = col.name;
-          cell.alignment = { horizontal: 'center', vertical: 'middle' };
-          cell.font = { bold: true }; // Apply bold font
-          // Apply borders to the header cell
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
+          cell.alignment = headerAligmentConfigs;
+          cell.font = headerFontConfigs;
+          cell.border = borderConfigs;
         });
         rowIndex++; // Increment row index after adding headers
       }
@@ -247,25 +285,21 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
             }
           }
 
-          // Apply borders to the cell
-          cell.border = {
-            top: { style: 'thin' },
-            left: { style: 'thin' },
-            bottom: { style: 'thin' },
-            right: { style: 'thin' },
-          };
+          // Apply styles to the cell
+          cell.font = cellFontConfigs;
+          cell.border = borderConfigs;
+          cell.alignment = cellAlignmentConfigs;
         });
         rowIndex++; // Move to the next row
       });
 
-      // Apply sorting
-      if (sorting) {
-        console.warn('Sorting is not implemented in this version.');
-      }
-
-      // Apply filtering (not natively supported in ExcelJS; requires client-side configuration)
-      if (filtering) {
-        console.warn('Filtering is not implemented in this version.');
+      // Apply auto-filter
+      if (excelConfigs.autoFilter) {
+        const lastCol = startCol + columns.length - 1; // Calculate the last column
+        worksheet.autoFilter = {
+          from: { row: startRow + 1, column: startCol }, // Start from header row
+          to: { row: rowIndex - 1, column: lastCol }, // End at the last row of data
+        };
       }
 
       // Auto-fit column widths
@@ -295,7 +329,7 @@ export const excelGeneratorRouter: Router = (() => {
   router.use('/downloads', express.static(exportsDir));
 
   router.post('/generate', async (_req: Request, res: Response) => {
-    const { sheetsData } = _req.body; // TODO: extract excel config object from request body
+    const { sheetsData, excelConfigs } = _req.body; // TODO: extract excel config object from request body
     if (!sheetsData.length) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
@@ -307,7 +341,16 @@ export const excelGeneratorRouter: Router = (() => {
     }
 
     try {
-      const fileName = execGenExcelFuncs(sheetsData);
+      const fileName = execGenExcelFuncs(sheetsData, {
+        fontFamily: excelConfigs.fontFamily ?? DEFAULT_EXCEL_CONFIGS.fontFamily,
+        titleFontSize: excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.titleFontSize,
+        headerFontSize: excelConfigs.headerFontSize ?? DEFAULT_EXCEL_CONFIGS.headerFontSize,
+        fontSize: excelConfigs.fontSize ?? DEFAULT_EXCEL_CONFIGS.fontSize,
+        autoFilter: excelConfigs.autoFilter ?? DEFAULT_EXCEL_CONFIGS.autoFilter,
+        borderStyle: excelConfigs.borderStyle ?? DEFAULT_EXCEL_CONFIGS.borderStyle,
+        wrapText: excelConfigs.wrapText ?? DEFAULT_EXCEL_CONFIGS.wrapText,
+      });
+
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
