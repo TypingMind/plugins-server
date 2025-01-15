@@ -156,6 +156,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
         columns.forEach((col, colIdx) => {
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           cell.value = col.name;
+          cell.alignment = { horizontal: 'center', vertical: 'middle' };
           cell.font = { bold: true }; // Apply bold font
           // Apply borders to the header cell
           cell.border = {
@@ -198,54 +199,52 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
           let cellValue: any = value != null ? value : ''; // Handle empty/null values
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           // Check if the value is a formula
-          if (typeof value === 'object' && value.formula) {
-            const formulaCell: any = { formula: value.formula }; // Handle formula
+          if (typeof cellValue === 'object' && cellValue.formula) {
+            const formulaCell: any = { formula: cellValue.formula }; // Handle formula
             if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
               cell.numFmt = format; // Apply number format
             }
             cell.value = formulaCell;
-          } else if (value != null) {
+          } else {
             // Assign cell type based on the header definition
             switch (cellType) {
               case 'number': {
-                cellValue = !isNaN(Number(value)) ? Math.round(Number(value)) : value;
+                cellValue = !isNaN(Number(cellValue)) ? Math.round(Number(cellValue)) : cellValue;
                 cell.value = cellValue;
                 cell.numFmt = format || '0';
                 break;
               }
               case 'boolean': {
-                cellValue = Boolean(value);
+                cellValue = Boolean(cellValue);
                 cell.value = cellValue;
                 break;
               }
               case 'date': {
-                const parsedDate = new Date(value);
-                cellValue = !isNaN(parsedDate.getTime()) ? parsedDate : value;
+                const parsedDate = new Date(cellValue);
+                cellValue = !isNaN(parsedDate.getTime()) ? parsedDate : cellValue;
                 cell.value = cellValue;
                 cell.numFmt = format || 'yyyy-mm-dd';
                 break;
               }
               case 'percent': {
-                cellValue = !isNaN(Number(value)) ? Number(value) : value;
+                cellValue = !isNaN(Number(cellValue)) ? Number(cellValue) : cellValue;
                 cell.value = cellValue;
                 cell.numFmt = format || '0.00%';
                 break;
               }
               case 'currency': {
-                cellValue = !isNaN(Number(value)) ? Number(value) : value;
+                cellValue = !isNaN(Number(cellValue)) ? Number(cellValue) : cellValue;
                 cell.value = cellValue;
                 cell.numFmt = format || '$#,##0';
                 break;
               }
               case 'string':
               default: {
-                cellValue = String(value);
+                cellValue = String(cellValue);
                 cell.value = cellValue;
                 break;
               }
             }
-          } else {
-            cell.value = ''; // Handle empty value
           }
 
           // Apply borders to the cell
@@ -261,12 +260,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
 
       // Apply sorting
       if (sorting) {
-        const columnIndex = sorting.column.charCodeAt(0) - 65; // Convert 'A' to 0, 'B' to 1, etc.
-        rows.sort((a, b) =>
-          sorting.order === 'asc'
-            ? a[columnIndex].localeCompare(b[columnIndex])
-            : b[columnIndex].localeCompare(a[columnIndex])
-        );
+        console.warn('Sorting is not implemented in this version.');
       }
 
       // Apply filtering (not natively supported in ExcelJS; requires client-side configuration)
