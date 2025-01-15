@@ -136,16 +136,34 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
 
       // Add table name row
       if (title) {
-        worksheet.getCell(rowIndex, startCol).value = title;
+        const startCell = worksheet.getCell(rowIndex, startCol);
+        startCell.value = title;
         worksheet.mergeCells(rowIndex, startCol, rowIndex, startCol + columns.length - 1);
-        worksheet.getCell(rowIndex, startCol).alignment = { horizontal: 'center', vertical: 'middle' };
+        startCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        startCell.font = { bold: true };
+        // Apply borders to the header cell
+        startCell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' },
+        };
         rowIndex++; // Move to the next row
       }
 
       // Add column headers if not skipped
       if (!skipHeader && columns) {
         columns.forEach((col, colIdx) => {
-          worksheet.getCell(rowIndex, startCol + colIdx).value = col.name;
+          const cell = worksheet.getCell(rowIndex, startCol + colIdx);
+          cell.value = col.name;
+          cell.font = { bold: true }; // Apply bold font
+          // Apply borders to the header cell
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
         });
         rowIndex++; // Increment row index after adding headers
       }
@@ -178,57 +196,65 @@ export function execGenExcelFuncs(sheetsData: SheetData[]): string {
           const cellType = columnTypes[colIdx];
           const format = columnFormats[colIdx];
           let cellValue: any = value != null ? value : ''; // Handle empty/null values
-
+          const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           // Check if the value is a formula
-          if (typeof value === 'object' && value.f) {
-            const formulaCell: any = { formula: value.f }; // Handle formula
+          if (typeof value === 'object' && value.formula) {
+            const formulaCell: any = { formula: value.formula }; // Handle formula
             if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
-              formulaCell.style = { numFmt: format }; // Apply number format
+              cell.numFmt = format; // Apply number format
             }
-            worksheet.getCell(rowIndex, startCol + colIdx).value = formulaCell;
+            cell.value = formulaCell;
           } else if (value != null) {
             // Assign cell type based on the header definition
             switch (cellType) {
               case 'number': {
                 cellValue = !isNaN(Number(value)) ? Math.round(Number(value)) : value;
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
-                worksheet.getCell(rowIndex, startCol + colIdx).numFmt = format || '0';
+                cell.value = cellValue;
+                cell.numFmt = format || '0';
                 break;
               }
               case 'boolean': {
                 cellValue = Boolean(value);
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
+                cell.value = cellValue;
                 break;
               }
               case 'date': {
                 const parsedDate = new Date(value);
                 cellValue = !isNaN(parsedDate.getTime()) ? parsedDate : value;
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
-                worksheet.getCell(rowIndex, startCol + colIdx).numFmt = format || 'yyyy-mm-dd';
+                cell.value = cellValue;
+                cell.numFmt = format || 'yyyy-mm-dd';
                 break;
               }
               case 'percent': {
                 cellValue = !isNaN(Number(value)) ? Number(value) : value;
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
-                worksheet.getCell(rowIndex, startCol + colIdx).numFmt = format || '0.00%';
+                cell.value = cellValue;
+                cell.numFmt = format || '0.00%';
                 break;
               }
               case 'currency': {
                 cellValue = !isNaN(Number(value)) ? Number(value) : value;
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
-                worksheet.getCell(rowIndex, startCol + colIdx).numFmt = format || '$#,##0';
+                cell.value = cellValue;
+                cell.numFmt = format || '$#,##0';
                 break;
               }
               case 'string':
               default: {
                 cellValue = String(value);
-                worksheet.getCell(rowIndex, startCol + colIdx).value = cellValue;
+                cell.value = cellValue;
                 break;
               }
             }
           } else {
-            worksheet.getCell(rowIndex, startCol + colIdx).value = ''; // Handle empty value
+            cell.value = ''; // Handle empty value
           }
+
+          // Apply borders to the cell
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' },
+          };
         });
         rowIndex++; // Move to the next row
       });
