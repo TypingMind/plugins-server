@@ -82,22 +82,24 @@ interface SheetData {
 
 interface ExcelConfig {
   fontFamily: string;
-  titleFontSize: number;
+  tableTitleFontSize: number;
   headerFontSize: number;
   fontSize: number;
+  autoFitColumnWidth: boolean;
   autoFilter: boolean;
-  borderStyle: ExcelJS.BorderStyle; // thin, double, dashed, thick
+  borderStyle: ExcelJS.BorderStyle | null; // thin, double, dashed, thick
   wrapText: boolean;
 }
 
 const DEFAULT_EXCEL_CONFIGS: ExcelConfig = {
   fontFamily: 'Calibri',
-  titleFontSize: 16,
+  tableTitleFontSize: 13,
   headerFontSize: 11,
   fontSize: 11,
+  autoFitColumnWidth: true,
   autoFilter: false,
   wrapText: false,
-  borderStyle: 'thin',
+  borderStyle: null,
 };
 
 // Helper function to convert column letter (e.g., 'A') to column index (e.g., 1)
@@ -143,12 +145,14 @@ function autoFitColumns(
 
 export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelConfig): string {
   const workbook = new ExcelJS.Workbook();
-  const borderConfigs = {
-    top: { style: excelConfigs.borderStyle },
-    left: { style: excelConfigs.borderStyle },
-    bottom: { style: excelConfigs.borderStyle },
-    right: { style: excelConfigs.borderStyle },
-  };
+  const borderConfigs = excelConfigs.borderStyle
+    ? {
+        top: { style: excelConfigs.borderStyle },
+        left: { style: excelConfigs.borderStyle },
+        bottom: { style: excelConfigs.borderStyle },
+        right: { style: excelConfigs.borderStyle },
+      }
+    : {};
   const titleAlignmentConfigs: any = {
     horizontal: 'center',
     vertical: 'middle',
@@ -157,7 +161,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
   const titleFontConfigs: any = {
     name: excelConfigs.fontFamily,
     bold: true,
-    size: excelConfigs.titleFontSize,
+    size: excelConfigs.tableTitleFontSize,
   };
   const headerAligmentConfigs: any = {
     wrapText: excelConfigs.wrapText,
@@ -303,7 +307,9 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
       }
 
       // Auto-fit column widths
-      autoFitColumns(worksheet, startRow, rows, columns.length, startCol);
+      if (excelConfigs.autoFitColumnWidth) {
+        autoFitColumns(worksheet, startRow, rows, columns.length, startCol);
+      }
     });
   });
 
@@ -343,12 +349,16 @@ export const excelGeneratorRouter: Router = (() => {
     try {
       const fileName = execGenExcelFuncs(sheetsData, {
         fontFamily: excelConfigs.fontFamily ?? DEFAULT_EXCEL_CONFIGS.fontFamily,
-        titleFontSize: excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.titleFontSize,
+        tableTitleFontSize: excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.tableTitleFontSize,
         headerFontSize: excelConfigs.headerFontSize ?? DEFAULT_EXCEL_CONFIGS.headerFontSize,
         fontSize: excelConfigs.fontSize ?? DEFAULT_EXCEL_CONFIGS.fontSize,
         autoFilter: excelConfigs.autoFilter ?? DEFAULT_EXCEL_CONFIGS.autoFilter,
-        borderStyle: excelConfigs.borderStyle ?? DEFAULT_EXCEL_CONFIGS.borderStyle,
+        borderStyle:
+          excelConfigs.borderStyle || excelConfigs.borderStyle !== 'none'
+            ? excelConfigs.borderStyle
+            : DEFAULT_EXCEL_CONFIGS.borderStyle,
         wrapText: excelConfigs.wrapText ?? DEFAULT_EXCEL_CONFIGS.wrapText,
+        autoFitColumnWidth: excelConfigs.autoFitColumnWidth ?? DEFAULT_EXCEL_CONFIGS.autoFitColumnWidth,
       });
 
       const serviceResponse = new ServiceResponse(
