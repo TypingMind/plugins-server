@@ -242,7 +242,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           // Check if the value is a formula
           if (typeof cellValue === 'object') {
-            if (cellValue.formula) {
+            if (cellValue.formula && cellValue.formula !== '') {
               const formulaCell: any = { formula: cellValue.formula }; // Handle formula
               if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
                 cell.numFmt = format; // Apply number format
