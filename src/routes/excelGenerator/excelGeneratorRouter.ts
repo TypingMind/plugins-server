@@ -241,12 +241,16 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
           let cellValue: any = value != null ? value : ''; // Handle empty/null values
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           // Check if the value is a formula
-          if (typeof cellValue === 'object' && cellValue.formula) {
-            const formulaCell: any = { formula: cellValue.formula }; // Handle formula
-            if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
-              cell.numFmt = format; // Apply number format
+          if (typeof cellValue === 'object') {
+            if (cellValue.formula) {
+              const formulaCell: any = { formula: cellValue.formula }; // Handle formula
+              if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
+                cell.numFmt = format; // Apply number format
+              }
+              cell.value = formulaCell;
+            } else {
+              cell.value = '';
             }
-            cell.value = formulaCell;
           } else {
             // Assign cell type based on the header definition
             switch (cellType) {
