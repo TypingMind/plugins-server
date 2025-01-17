@@ -74,7 +74,10 @@ interface SheetData {
   tables: {
     title: string;
     startCell: string;
-    rows: any[][];
+    rows: {
+      type: string; // static_value or formula,
+      value: string;
+    }[][];
     columns: { name: string; type: string; format: string }[]; // types that have format, number, percent, currency
     skipHeader: boolean;
   }[];
@@ -234,26 +237,23 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
         }) || [];
 
       // Add rows with data types
-      rows.forEach((row) => {
-        row.forEach((value, colIdx) => {
-          const cellType = columnTypes[colIdx];
+      rows.forEach((rowData) => {
+        rowData.forEach((cellData, colIdx) => {
+          const { type = 'static_value', value } = cellData;
+          const valueType = columnTypes[colIdx];
           const format = columnFormats[colIdx];
           let cellValue: any = value != null ? value : ''; // Handle empty/null values
           const cell = worksheet.getCell(rowIndex, startCol + colIdx);
           // Check if the value is a formula
-          if (typeof cellValue === 'object') {
-            if (cellValue.formula && cellValue.formula !== '') {
-              const formulaCell: any = { formula: cellValue.formula }; // Handle formula
-              if (cellType === 'percent' || cellType === 'currency' || cellType === 'number' || cellType === 'date') {
-                cell.numFmt = format; // Apply number format
-              }
-              cell.value = formulaCell;
-            } else {
-              cell.value = '';
+          if (type == 'formula') {
+            const formulaCell: any = { formula: cellValue }; // Handle formula
+            if (valueType === 'percent' || valueType === 'currency' || valueType === 'number' || valueType === 'date') {
+              cell.numFmt = format; // Apply number format
             }
+            cell.value = formulaCell;
           } else {
             // Assign cell type based on the header definition
-            switch (cellType) {
+            switch (valueType) {
               case 'number': {
                 cellValue = !isNaN(Number(cellValue)) ? Math.round(Number(cellValue)) : cellValue;
                 cell.value = cellValue;
