@@ -183,7 +183,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
 
   sheetsData.forEach(({ sheetName, tables }) => {
     const worksheet = workbook.addWorksheet(sheetName);
-    tables.forEach(({ startCell, title, rows, columns, skipHeader }) => {
+    tables.forEach(({ startCell, title, rows = [], columns = [], skipHeader }) => {
       const startCol = columnLetterToNumber(startCell[0]); // Convert column letter to index (e.g., 'A' -> 1)
       const startRow = parseInt(startCell.slice(1)); // Extract the row number (e.g., 'A1' -> 1)
       let rowIndex = startRow; // Set the initial row index to startRow for each table
@@ -212,7 +212,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
       }
 
       // Map headers to types
-      const columnTypes = columns?.map((col: any) => col.type) || [];
+      const columnTypes = columns.map((col: any) => col.type) || [];
       const columnFormats =
         columns?.map((col: any) => {
           let format = undefined;
