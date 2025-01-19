@@ -45,22 +45,22 @@ const ContentSchema = z.object({
 });
 
 // Define the base schema for a section
-const BaseSectionSchema = z.object({
+const SectionSchema = z.object({
+  sectionId: z.string().openapi({
+    description: 'A unique identifier for the section.',
+  }),
   heading: z.string().optional().openapi({
     description: 'Heading of the section.',
   }),
   headingLevel: z.number().int().min(1).optional().openapi({
     description: 'Level of the heading (e.g., 1 for main heading, 2 for subheading).',
   }),
+  parentSectionId: z.string().optional().openapi({
+    description:
+      'The unique identifier of the parent section, if this section is a child of another. Leave empty if this section has no parent.',
+  }),
   content: z.array(ContentSchema).optional().openapi({
     description: 'Content contained within the section, including paragraphs, tables, etc.',
-  }),
-});
-
-// Extend the base schema with subSections
-const SectionSchema = BaseSectionSchema.extend({
-  subSections: z.array(BaseSectionSchema).optional().openapi({
-    description: 'Subsections within the main section.',
   }),
 });
 
