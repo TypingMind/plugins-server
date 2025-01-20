@@ -10,6 +10,7 @@ import rateLimiter from '@/common/middleware/rateLimiter';
 import requestLogger from '@/common/middleware/requestLogger';
 import { healthCheckRouter } from '@/routes/healthCheck/healthCheckRouter';
 
+import { excelGeneratorRouter } from './routes/excelGenerator/excelGeneratorRouter';
 import { powerpointGeneratorRouter } from './routes/powerpointGenerator/powerpointGeneratorRouter';
 import { webPageReaderRouter } from './routes/webPageReader/webPageReaderRouter';
 import { wordGeneratorRouter } from './routes/wordGenerator/wordGeneratorRouter';
@@ -40,6 +41,7 @@ app.use('/youtube-transcript', youtubeTranscriptRouter);
 app.use('/web-page-reader', webPageReaderRouter);
 app.use('/powerpoint-generator', powerpointGeneratorRouter);
 app.use('/word-generator', wordGeneratorRouter);
+app.use('/excel-generator', excelGeneratorRouter);
 // Swagger UI
 app.use(openAPIRouter);
 

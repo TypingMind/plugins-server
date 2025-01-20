@@ -1,5 +1,6 @@
 import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 
+import { excelGeneratorRegistry } from '@/routes/excelGenerator/excelGeneratorRouter';
 import { healthCheckRegistry } from '@/routes/healthCheck/healthCheckRouter';
 import { powerpointGeneratorRegistry } from '@/routes/powerpointGenerator/powerpointGeneratorRouter';
 import { articleReaderRegistry } from '@/routes/webPageReader/webPageReaderRouter';
@@ -13,6 +14,7 @@ export function generateOpenAPIDocument() {
     articleReaderRegistry,
     powerpointGeneratorRegistry,
     wordGeneratorRegistry,
+    excelGeneratorRegistry,
   ]);
   const generator = new OpenApiGeneratorV3(registry.definitions);
 
