@@ -16,20 +16,27 @@ Plugins Server is used by some built-in plugins on Typing Mind (e.g., Web Page R
 
 Plugins Server is open-sourced and is intended to be self-hosted by individual users for private use only.
 
+**Note**: The Plugins Server only provides an endpoint for retrieving server-side processing results. To make the plugin work, you must also install a TypingMind's plugin configured to send requests to this server endpoint.
+
 ## 🔌 How to use (for Typing Mind users)
 
 Two simple steps:
 
-1. Deploy this repo on any hosting provider that supports NodeJS (e.g., Render.com, AWS, etc.). (We also provide a Dockerfile for easy deployment on Docker-supported hosting providers)
-2. Use the server endpoint URL in your Settings page of Typing Mind's plugins.
+1. Deploy this repo on any hosting provider that supports NodeJS (e.g., Render.com, AWS, etc.). (We also provide a Dockerfile for easy deployment on Docker-supported hosting providers).
+
+2. Install your desired TypingMind's plugin. Update the server endpoint URL in your Settings page.
 
 Follow this guide for detailed instructions: [How to Deploy Plugins Server on Render.com](https://docs.typingmind.com/plugins/plugins-server/how-to-deploy-plugins-server-on-render)
+
+Follow this guide for setting up a TypingMind's plugin: [Build a TypingMind Plugin](https://docs.typingmind.com/plugins/build-a-typingmind-plugin)
 
 ## List of available endpoints
 
 After deploying, visit your Plugins Server URL to see the list of available endpoints (served in Swagger UI).
 
-Here are the latest endpoints from our public servers: https://plugins.typingmind.com/ (**Note**: this public server only hosts the API documentation. You cannot use this Public Server as your proxy. You must deploy your own Plugins Server to use all the available endpoints).
+In your local development environment, visit http://localhost:3000 to access the page.
+
+**Note**: this public server only hosts the API documentation. You cannot use this Public Server as your proxy. You must deploy your own Plugins Server to use all the available endpoints.
 
 ## 🛠️ Development (for Typing Mind plugins developers)
 
