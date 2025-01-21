@@ -10,10 +10,10 @@ import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
-import { ArticleReaderSchema } from './articleReaderModel';
+import { WebPageReaderRequestParamSchema, WebPageReaderResponseSchema } from './webPageReaderModel';
 
 export const articleReaderRegistry = new OpenAPIRegistry();
-articleReaderRegistry.register('ArticleReader', ArticleReaderSchema);
+articleReaderRegistry.register('Web Page Reader', WebPageReaderResponseSchema);
 
 const removeUnwantedElements = (_cheerio: any) => {
   const elementsToRemove = [
@@ -59,17 +59,20 @@ const fetchAndCleanContent = async (url: string) => {
   return { title, content: article ? article.textContent : '' };
 };
 
-export const articleReaderRouter: Router = (() => {
+export const webPageReaderRouter: Router = (() => {
   const router = express.Router();
 
   articleReaderRegistry.registerPath({
     method: 'get',
-    path: '/content',
-    tags: ['Article Reader'],
-    responses: createApiResponse(ArticleReaderSchema, 'Success'),
+    path: '/web-page-reader/get-content',
+    tags: ['Web Page Reader'],
+    request: {
+      query: WebPageReaderRequestParamSchema,
+    },
+    responses: createApiResponse(WebPageReaderResponseSchema, 'Success'),
   });
 
-  router.get('/', async (_req: Request, res: Response) => {
+  router.get('/get-content', async (_req: Request, res: Response) => {
     const { url } = _req.query;
 
     if (typeof url !== 'string') {
@@ -80,7 +83,7 @@ export const articleReaderRouter: Router = (() => {
       const content = await fetchAndCleanContent(url);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
-        'Service is healthy',
+        'Content fetched successfully',
         content,
         StatusCodes.OK
       );
