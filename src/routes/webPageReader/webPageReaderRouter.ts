@@ -87,11 +87,17 @@ export const webPageReaderRouter: Router = (() => {
         content,
         StatusCodes.OK
       );
-      handleServiceResponse(serviceResponse, res);
+      return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       console.error(`Error fetching content ${(error as Error).message}`);
-      const errorMessage = `Error fetching content $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      const errorMessage = `Error fetching content ${(error as Error).message}`;
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        errorMessage,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(serviceResponse, res);
     }
   });
 
