@@ -26,7 +26,9 @@ export const youtubeTranscriptRouter: Router = (() => {
   });
 
   router.get('/get-transcript', async (_req: Request, res: Response) => {
+    console.log('Head to get-transcript');
     const { videoId } = _req.query;
+    console.log('Head to get-transcript -> ', videoId);
 
     if (!videoId) {
       return new ServiceResponse(
@@ -39,6 +41,7 @@ export const youtubeTranscriptRouter: Router = (() => {
 
     try {
       const transcript = await YoutubeTranscript.fetchTranscript(videoId as string);
+      console.log('Transcript response -> ', JSON.stringify(transcript));
       const textOnly = transcript.map((entry) => entry.text).join(' ');
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
@@ -46,10 +49,17 @@ export const youtubeTranscriptRouter: Router = (() => {
         { textOnly },
         StatusCodes.OK
       );
-      handleServiceResponse(serviceResponse, res);
+
+      return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = `Error fetching transcript $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        errorMessage,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(serviceResponse, res);
     }
   });
   return router;
