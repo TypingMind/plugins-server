@@ -49,10 +49,17 @@ export const youtubeTranscriptRouter: Router = (() => {
         { textOnly },
         StatusCodes.OK
       );
-      handleServiceResponse(serviceResponse, res);
+
+      return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = `Error fetching transcript $${(error as Error).message}`;
-      return new ServiceResponse(ResponseStatus.Failed, errorMessage, null, StatusCodes.INTERNAL_SERVER_ERROR);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        errorMessage,
+        null,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(serviceResponse, res);
     }
   });
   return router;
