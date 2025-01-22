@@ -393,6 +393,36 @@ const generateSectionContent = (section: any, config: any) => {
   return sectionContent;
 };
 
+// Function to build a hierarchical structure from a flat list of sections
+const buildSectionsHierarchy = (sections: any[]) => {
+  const sectionMap = new Map();
+
+  // Create a map of sections by ID
+  sections.forEach((section) => {
+    sectionMap.set(section.sectionId, { ...section, subSections: [] });
+  });
+
+  const rootSections: any[] = [];
+
+  // Organize sections into a hierarchy
+  sections.forEach((section) => {
+    if (section.parentSectionId) {
+      // If the section has a parent, add it as a subSection
+      const parent = sectionMap.get(section.parentSectionId);
+      if (parent) {
+        parent.subSections.push(sectionMap.get(section.sectionId));
+      } else {
+        console.warn(`Parent section with ID ${section.parentSectionId} not found.`);
+      }
+    } else {
+      // If no parent, it's a root section
+      rootSections.push(sectionMap.get(section.sectionId));
+    }
+  });
+
+  return rootSections;
+};
+
 async function execGenWordFuncs(
   data: {
     title: string;
@@ -491,6 +521,9 @@ async function execGenWordFuncs(
     );
   }
 
+  // Build sections hierarchy
+  const sectionsHierarchy = buildSectionsHierarchy(data.sections);
+
   // Create the document based on JSON data
   const doc = new Document({
     styles: {
@@ -533,7 +566,7 @@ async function execGenWordFuncs(
           }),
           ...tableOfContentConfigs,
           // Generate all sections and sub-sections
-          ...data.sections.flatMap((section) =>
+          ...sectionsHierarchy.flatMap((section) =>
             generateSectionContent(section, { ...config, numberingReference: selectedNumberingOption?.reference })
           ),
         ],
