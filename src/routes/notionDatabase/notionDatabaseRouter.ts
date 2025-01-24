@@ -12,6 +12,8 @@ import {
   NotionDatabaseArchivePageResponseSchema,
   NotionDatabaseCreatePageRequestBodySchema,
   NotionDatabaseCreatePageResponseSchema,
+  NotionDatabaseQueryPageRequestBodySchema,
+  NotionDatabaseQueryPageResponseSchema,
   NotionDatabaseStructureViewerRequestBodySchema,
   NotionDatabaseStructureViewerResponseSchema,
   NotionDatabaseUpdatePageRequestBodySchema,
@@ -58,6 +60,16 @@ notionDatabaseRegistry.registerPath({
     body: createApiRequestBody(NotionDatabaseArchivePageRequestBodySchema, 'application/json'),
   },
   responses: createApiResponse(NotionDatabaseArchivePageResponseSchema, 'Success'),
+});
+
+notionDatabaseRegistry.registerPath({
+  method: 'post',
+  path: '/notion-database/query-pages',
+  tags: ['Notion Database'],
+  request: {
+    body: createApiRequestBody(NotionDatabaseQueryPageRequestBodySchema, 'application/json'),
+  },
+  responses: createApiResponse(NotionDatabaseQueryPageResponseSchema, 'Success'),
 });
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
@@ -247,6 +259,46 @@ async function archivePageInNotionDatabase(apiKey: string, pageId: string) {
     return data;
   } catch (error: any) {
     throw new Error(`Failed to removing page: ${error.message}`);
+  }
+}
+
+async function queryPagesInNotionDatabase(
+  apiKey: string,
+  databaseId: string,
+  filter: object,
+  sorts: any[],
+  pageSize: number,
+  startCursor: string | undefined
+) {
+  // Headers for Notion API requests
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Notion-Version': NOTION_VERSION,
+  };
+
+  const requestBody = {
+    filter: filter,
+    sorts: sorts,
+    page_size: pageSize,
+    start_cursor: startCursor,
+  };
+
+  try {
+    const response = await fetch(`${NOTION_API_URL}/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error query pages: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    throw new Error(`Failed to query pages: ${error.message}`);
   }
 }
 
@@ -441,6 +493,54 @@ export const notionDatabaseRouter: Router = (() => {
       let responseObject = '';
       if (errorMessage.includes('')) {
         responseObject = `Sorry, we couldn't remove the page!`;
+      }
+      const errorServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        `Error ${errorMessage}`,
+        responseObject,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(errorServiceResponse, res);
+    }
+  });
+
+  router.post('/query-pages', async (_req: Request, res: Response) => {
+    const { notionApiKey, databaseId, filter = {}, sorts = [], pageSize = 100, startCursor } = _req.body;
+
+    if (!notionApiKey) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Notion Key is required!',
+        'Please make sure you have sent the Notion Key from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    if (!databaseId) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Database ID is required!',
+        'Please make sure you have sent the Database ID from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    try {
+      const result = await queryPagesInNotionDatabase(notionApiKey, databaseId, filter, sorts, pageSize, startCursor);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Success,
+        'Pages query successfully',
+        result,
+        StatusCodes.OK
+      );
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      let responseObject = '';
+      if (errorMessage.includes('')) {
+        responseObject = `Sorry, we couldn't query the pages!`;
       }
       const errorServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,

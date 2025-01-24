@@ -64,3 +64,22 @@ export const NotionDatabaseArchivePageRequestBodySchema = z.object({
   }),
 });
 export type NotionDatabaseArchivePageRequestBody = z.infer<typeof NotionDatabaseArchivePageRequestBodySchema>;
+
+// Define Notion Database Query
+export type NotionDatabaseQueryPageResponse = z.infer<typeof NotionDatabaseQueryPageResponseSchema>;
+export const NotionDatabaseQueryPageResponseSchema = z.object({});
+// Request Body Schema
+export const NotionDatabaseQueryPageRequestBodySchema = z.object({
+  databaseId: z.string().openapi({
+    description: 'The ID of the Notion Database whose structure is being viewed.',
+  }),
+  notionApiKey: z.string().openapi({
+    description:
+      'The Notion API Key getting from Notion Integration Page at https://www.notion.so/profile/integrations',
+  }),
+  query: z.object({}),
+  sorts: z.array(z.object({})),
+  pageSize: z.number().optional(),
+  startCursor: z.any().optional(),
+});
+export type NotionDatabaseQueryPageRequestBody = z.infer<typeof NotionDatabaseQueryPageRequestBodySchema>;
