@@ -127,7 +127,8 @@ function mapNotionPropertyRequestBody(properties: any[] = []) {
         };
         break;
       default:
-        throw new Error(`Unknown property type: ${propertyType}`);
+        console.info(`Unknown property type: ${propertyType}`);
+        break;
     }
   });
 
