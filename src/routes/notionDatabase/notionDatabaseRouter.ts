@@ -9,8 +9,11 @@ import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import {
   NotionDatabaseCreatePageRequestBodySchema,
+  NotionDatabaseCreatePageResponseSchema,
   NotionDatabaseStructureViewerRequestBodySchema,
   NotionDatabaseStructureViewerResponseSchema,
+  NotionDatabaseUpdatePageRequestBodySchema,
+  NotionDatabaseUpdatePageResponseSchema,
 } from './notionDatabaseModel';
 export const COMPRESS = true;
 export const notionDatabaseRegistry = new OpenAPIRegistry();
@@ -32,7 +35,17 @@ notionDatabaseRegistry.registerPath({
   request: {
     body: createApiRequestBody(NotionDatabaseCreatePageRequestBodySchema, 'application/json'),
   },
-  responses: createApiResponse(NotionDatabaseCreatePageRequestBodySchema, 'Success'),
+  responses: createApiResponse(NotionDatabaseCreatePageResponseSchema, 'Success'),
+});
+
+notionDatabaseRegistry.registerPath({
+  method: 'post',
+  path: '/notion-database/update-page',
+  tags: ['Notion Database'],
+  request: {
+    body: createApiRequestBody(NotionDatabaseUpdatePageRequestBodySchema, 'application/json'),
+  },
+  responses: createApiResponse(NotionDatabaseUpdatePageResponseSchema, 'Success'),
 });
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
@@ -165,6 +178,36 @@ async function createPageInNotionDatabase(apiKey: string, databaseId: string, pr
   }
 }
 
+async function updatePageInNotionDatabase(apiKey: string, pageId: string, properties: object) {
+  // Headers for Notion API requests
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Notion-Version': NOTION_VERSION,
+  };
+
+  const requestBody = {
+    properties: properties,
+  };
+
+  try {
+    const response = await fetch(`${NOTION_API_URL}/pages/${pageId}`, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error adding update page: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    throw new Error(`Failed to update page: ${error.message}`);
+  }
+}
+
 export const notionDatabaseRouter: Router = (() => {
   const router = express.Router();
 
@@ -269,5 +312,55 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(errorServiceResponse, res);
     }
   });
+
+  router.post('/update-page', async (_req: Request, res: Response) => {
+    const { notionApiKey, pageId, properties } = _req.body;
+
+    if (!notionApiKey) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Notion Key is required!',
+        'Please make sure you have sent the Notion Key from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    if (!pageId) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Page ID is required!',
+        'Please make sure you have sent the Page ID from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    const notionProperties = mapNotionPropertyRequestBody(properties);
+    try {
+      const result = await updatePageInNotionDatabase(notionApiKey, pageId, notionProperties);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Success,
+        'Page updated successfully',
+        result,
+        StatusCodes.OK
+      );
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      let responseObject = '';
+      if (errorMessage.includes('')) {
+        responseObject = `Sorry, we couldn't update the page!`;
+      }
+      const errorServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        `Error ${errorMessage}`,
+        responseObject,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(errorServiceResponse, res);
+    }
+  });
+
   return router;
 })();

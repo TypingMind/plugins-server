@@ -18,7 +18,7 @@ export const NotionDatabaseStructureViewerRequestBodySchema = z.object({
 });
 export type NotionDatabaseStructureViewerRequestBody = z.infer<typeof NotionDatabaseStructureViewerRequestBodySchema>;
 
-// Define Notion Database CRUD
+// Define Notion Database Create
 export type NotionDatabaseCreatePageResponse = z.infer<typeof NotionDatabaseCreatePageResponseSchema>;
 export const NotionDatabaseCreatePageResponseSchema = z.object({});
 // Request Body Schema
@@ -33,3 +33,19 @@ export const NotionDatabaseCreatePageRequestBodySchema = z.object({
   properties: z.array(z.object({})),
 });
 export type NotionDatabaseCreatePageRequestBody = z.infer<typeof NotionDatabaseCreatePageRequestBodySchema>;
+
+// Define Notion Database Update
+export type NotionDatabaseUpdatePageResponse = z.infer<typeof NotionDatabaseUpdatePageResponseSchema>;
+export const NotionDatabaseUpdatePageResponseSchema = z.object({});
+// Request Body Schema
+export const NotionDatabaseUpdatePageRequestBodySchema = z.object({
+  pageId: z.string().openapi({
+    description: 'The ID of the Notion Page whose structure is being viewed.',
+  }),
+  notionApiKey: z.string().openapi({
+    description:
+      'The Notion API Key getting from Notion Integration Page at https://www.notion.so/profile/integrations',
+  }),
+  properties: z.array(z.object({})),
+});
+export type NotionDatabaseUpdatePageRequestBody = z.infer<typeof NotionDatabaseUpdatePageRequestBodySchema>;
