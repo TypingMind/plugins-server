@@ -8,6 +8,8 @@ import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import {
+  NotionDatabaseArchivePageRequestBodySchema,
+  NotionDatabaseArchivePageResponseSchema,
   NotionDatabaseCreatePageRequestBodySchema,
   NotionDatabaseCreatePageResponseSchema,
   NotionDatabaseStructureViewerRequestBodySchema,
@@ -39,13 +41,23 @@ notionDatabaseRegistry.registerPath({
 });
 
 notionDatabaseRegistry.registerPath({
-  method: 'post',
+  method: 'patch',
   path: '/notion-database/update-page',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseUpdatePageRequestBodySchema, 'application/json'),
   },
   responses: createApiResponse(NotionDatabaseUpdatePageResponseSchema, 'Success'),
+});
+
+notionDatabaseRegistry.registerPath({
+  method: 'patch',
+  path: '/notion-database/archive-page',
+  tags: ['Notion Database'],
+  request: {
+    body: createApiRequestBody(NotionDatabaseArchivePageRequestBodySchema, 'application/json'),
+  },
+  responses: createApiResponse(NotionDatabaseArchivePageResponseSchema, 'Success'),
 });
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
@@ -208,6 +220,36 @@ async function updatePageInNotionDatabase(apiKey: string, pageId: string, proper
   }
 }
 
+async function archivePageInNotionDatabase(apiKey: string, pageId: string) {
+  // Headers for Notion API requests
+  const headers = {
+    Authorization: `Bearer ${apiKey}`,
+    'Content-Type': 'application/json',
+    'Notion-Version': NOTION_VERSION,
+  };
+
+  const requestBody = {
+    archived: true,
+  };
+
+  try {
+    const response = await fetch(`${NOTION_API_URL}/pages/${pageId}`, {
+      method: 'PATCH',
+      headers: headers,
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error removing page: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error: any) {
+    throw new Error(`Failed to removing page: ${error.message}`);
+  }
+}
+
 export const notionDatabaseRouter: Router = (() => {
   const router = express.Router();
 
@@ -351,6 +393,54 @@ export const notionDatabaseRouter: Router = (() => {
       let responseObject = '';
       if (errorMessage.includes('')) {
         responseObject = `Sorry, we couldn't update the page!`;
+      }
+      const errorServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        `Error ${errorMessage}`,
+        responseObject,
+        StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(errorServiceResponse, res);
+    }
+  });
+
+  router.post('/archive-page', async (_req: Request, res: Response) => {
+    const { notionApiKey, pageId } = _req.body;
+
+    if (!notionApiKey) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Notion Key is required!',
+        'Please make sure you have sent the Notion Key from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    if (!pageId) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Page ID is required!',
+        'Please make sure you have sent the Page ID from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    try {
+      const result = await archivePageInNotionDatabase(notionApiKey, pageId);
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Success,
+        'Page removed successfully',
+        result,
+        StatusCodes.OK
+      );
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      let responseObject = '';
+      if (errorMessage.includes('')) {
+        responseObject = `Sorry, we couldn't remove the page!`;
       }
       const errorServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,

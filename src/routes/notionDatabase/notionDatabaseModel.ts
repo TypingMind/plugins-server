@@ -49,3 +49,18 @@ export const NotionDatabaseUpdatePageRequestBodySchema = z.object({
   properties: z.array(z.object({})),
 });
 export type NotionDatabaseUpdatePageRequestBody = z.infer<typeof NotionDatabaseUpdatePageRequestBodySchema>;
+
+// Define Notion Database Delete
+export type NotionDatabaseArchivePageResponse = z.infer<typeof NotionDatabaseArchivePageResponseSchema>;
+export const NotionDatabaseArchivePageResponseSchema = z.object({});
+// Request Body Schema
+export const NotionDatabaseArchivePageRequestBodySchema = z.object({
+  pageId: z.string().openapi({
+    description: 'The ID of the Notion Page whose structure is being viewed.',
+  }),
+  notionApiKey: z.string().openapi({
+    description:
+      'The Notion API Key getting from Notion Integration Page at https://www.notion.so/profile/integrations',
+  }),
+});
+export type NotionDatabaseArchivePageRequestBody = z.infer<typeof NotionDatabaseArchivePageRequestBodySchema>;
