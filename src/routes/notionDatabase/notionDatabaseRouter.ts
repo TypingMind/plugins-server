@@ -74,6 +74,13 @@ notionDatabaseRegistry.registerPath({
 
 const NOTION_API_URL = 'https://api.notion.com/v1';
 const NOTION_VERSION = '2022-06-28';
+const DEFAULT_ANNOTATIONS = {
+  italic: false,
+  bold: false,
+  color: 'default',
+  strikethrough: false,
+  underline: false,
+};
 
 // Helper to fetch the database structure
 async function fetchDatabaseStructure(databaseId: string, apiKey: string) {
@@ -112,11 +119,26 @@ function mapNotionPropertyRequestBody(properties: any[] = []) {
       case 'title':
       case 'rich_text':
         notionProperties[propertyName] = {
-          [propertyType]: value.map((item: any) => ({
-            type: 'text',
-            text: { content: item.text.content },
-            annotations: item.annotations,
-          })),
+          [propertyType]: value.map((item: any) => {
+            const annotationConfigs = item.annotations || DEFAULT_ANNOTATIONS;
+            return {
+              type: 'text',
+              text: { content: item.text.content },
+              annotations: {
+                italic: annotationConfigs.italic !== undefined ? annotationConfigs.italic : DEFAULT_ANNOTATIONS.italic,
+                bold: annotationConfigs.bold !== undefined ? annotationConfigs.bold : DEFAULT_ANNOTATIONS.bold,
+                color: annotationConfigs.color ? annotationConfigs.color : DEFAULT_ANNOTATIONS.color,
+                strikethrough:
+                  annotationConfigs.strikethrough !== undefined
+                    ? annotationConfigs.strikethrough
+                    : DEFAULT_ANNOTATIONS.strikethrough,
+                underline:
+                  annotationConfigs.underline !== undefined
+                    ? annotationConfigs.underline
+                    : DEFAULT_ANNOTATIONS.underline,
+              },
+            };
+          }),
         };
         break;
       case 'number':
@@ -161,6 +183,24 @@ function mapNotionPropertyRequestBody(properties: any[] = []) {
       case 'phone_number':
         notionProperties[propertyName] = {
           phone_number: value,
+        };
+        break;
+      case 'checkbox':
+        notionProperties[propertyName] = {
+          checkbox: value,
+        };
+        break;
+      case 'files':
+        notionProperties[propertyName] = {
+          // Note: This verion only support external files
+          files: value
+            .filter((file: any) => file.external && file.external.url)
+            .map((file: any) => ({
+              name: file.name,
+              external: {
+                url: file.external.url,
+              },
+            })),
         };
         break;
       default:
