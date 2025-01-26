@@ -39,3 +39,23 @@ export function validateDatabaseQueryConfig(databaseStructures: any[], filter: a
     }
   }
 }
+
+export function validateNotionProperties(databaseStructure: any[], properties: any[]): void {
+  const validProperties = new Map(databaseStructure.map((prop) => [prop.name, prop.type]));
+
+  properties.forEach((property) => {
+    const { propertyName, propertyType } = property;
+
+    if (!validProperties.has(propertyName)) {
+      throw new Error(
+        `[Validation Error] Property '${propertyName}' does not exist in the database structure. Make sure it matches with the current database structure.`
+      );
+    }
+
+    if (validProperties.get(propertyName) !== propertyType) {
+      throw new Error(
+        `[Validation Error] Property '${propertyName}' has an invalid type '${propertyType}'. Expected type is '${validProperties.get(propertyName)}'.`
+      );
+    }
+  });
+}

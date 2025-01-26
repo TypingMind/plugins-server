@@ -19,7 +19,7 @@ import {
   NotionDatabaseUpdatePageRequestBodySchema,
   NotionDatabaseUpdatePageResponseSchema,
 } from './notionDatabaseModel';
-import { validateDatabaseQueryConfig } from './utils';
+import { validateDatabaseQueryConfig, validateNotionProperties } from './utils';
 export const COMPRESS = true;
 export const notionDatabaseRegistry = new OpenAPIRegistry();
 notionDatabaseRegistry.register('Notion Database', NotionDatabaseStructureViewerResponseSchema);
@@ -399,7 +399,7 @@ export const notionDatabaseRouter: Router = (() => {
   });
 
   router.post('/create-page', async (_req: Request, res: Response) => {
-    const { notionApiKey, databaseId, properties } = _req.body;
+    const { notionApiKey, databaseId, properties, databaseStructure = [] } = _req.body;
 
     if (!notionApiKey) {
       const validateServiceResponse = new ServiceResponse(
@@ -420,9 +420,10 @@ export const notionDatabaseRouter: Router = (() => {
       );
       return handleServiceResponse(validateServiceResponse, res);
     }
-
-    const notionProperties = mapNotionPropertyRequestBody(properties);
     try {
+      // Validate properties before creating
+      validateNotionProperties(databaseStructure, properties);
+      const notionProperties = mapNotionPropertyRequestBody(properties);
       const result = await createPageInNotionDatabase(notionApiKey, databaseId, notionProperties);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
@@ -433,23 +434,18 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = (error as Error).message;
-      let responseObject = '';
-      ``;
-      if (errorMessage.includes('')) {
-        responseObject = `Sorry, we couldn't create new page in the Notion database.`;
-      }
       const errorServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
-        `Error ${errorMessage}`,
-        responseObject,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        `Error: ${errorMessage}`,
+        `Sorry, we couldn't create new page in the Notion database!`,
+        errorMessage.includes('[Validation Error]') ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
       );
       return handleServiceResponse(errorServiceResponse, res);
     }
   });
 
   router.post('/update-page', async (_req: Request, res: Response) => {
-    const { notionApiKey, pageId, properties } = _req.body;
+    const { notionApiKey, pageId, properties, databaseStructure = [] } = _req.body;
 
     if (!notionApiKey) {
       const validateServiceResponse = new ServiceResponse(
@@ -471,8 +467,10 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(validateServiceResponse, res);
     }
 
-    const notionProperties = mapNotionPropertyRequestBody(properties);
     try {
+      // Validate properties before creating
+      validateNotionProperties(databaseStructure, properties);
+      const notionProperties = mapNotionPropertyRequestBody(properties);
       const result = await updatePageInNotionDatabase(notionApiKey, pageId, notionProperties);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
@@ -483,15 +481,11 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = (error as Error).message;
-      let responseObject = '';
-      if (errorMessage.includes('')) {
-        responseObject = `Sorry, we couldn't update the page!`;
-      }
       const errorServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
-        `Error ${errorMessage}`,
-        responseObject,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        `Error: ${errorMessage}`,
+        `Sorry, we couldn't update the page!!`,
+        errorMessage.includes('[Validation Error]') ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
       );
       return handleServiceResponse(errorServiceResponse, res);
     }
