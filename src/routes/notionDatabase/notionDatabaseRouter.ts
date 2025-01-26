@@ -19,6 +19,7 @@ import {
   NotionDatabaseUpdatePageRequestBodySchema,
   NotionDatabaseUpdatePageResponseSchema,
 } from './notionDatabaseModel';
+import { validateDatabaseQueryConfig } from './utils';
 export const COMPRESS = true;
 export const notionDatabaseRegistry = new OpenAPIRegistry();
 notionDatabaseRegistry.register('Notion Database', NotionDatabaseStructureViewerResponseSchema);
@@ -545,7 +546,15 @@ export const notionDatabaseRouter: Router = (() => {
   });
 
   router.post('/query-pages', async (_req: Request, res: Response) => {
-    const { notionApiKey, databaseId, filter = {}, sorts = [], pageSize = 100, startCursor } = _req.body;
+    const {
+      notionApiKey,
+      databaseId,
+      databaseStructure = [],
+      filter = {},
+      sorts = [],
+      pageSize = 100,
+      startCursor,
+    } = _req.body;
 
     if (!notionApiKey) {
       const validateServiceResponse = new ServiceResponse(
@@ -568,6 +577,9 @@ export const notionDatabaseRouter: Router = (() => {
     }
 
     try {
+      // Validate databaseStructure against filters and sorts
+      validateDatabaseQueryConfig(databaseStructure, filter, sorts);
+
       const result = await queryPagesInNotionDatabase(notionApiKey, databaseId, filter, sorts, pageSize, startCursor);
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
@@ -578,15 +590,11 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(serviceResponse, res);
     } catch (error) {
       const errorMessage = (error as Error).message;
-      let responseObject = '';
-      if (errorMessage.includes('')) {
-        responseObject = `Sorry, we couldn't query the pages!`;
-      }
       const errorServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
-        `Error ${errorMessage}`,
-        responseObject,
-        StatusCodes.INTERNAL_SERVER_ERROR
+        `Error: ${errorMessage}`,
+        `Sorry, we couldn't query the pages!`,
+        errorMessage.includes('[Validation Error]') ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
       );
       return handleServiceResponse(errorServiceResponse, res);
     }
