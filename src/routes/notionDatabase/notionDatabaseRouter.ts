@@ -1,4 +1,5 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
+import { Client as NotionClient } from '@notionhq/client';
 import express, { Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
 
@@ -20,6 +21,7 @@ import {
   NotionDatabaseUpdatePageResponseSchema,
 } from './notionDatabaseModel';
 import { validateDatabaseQueryConfig, validateNotionProperties } from './utils';
+
 export const COMPRESS = true;
 export const notionDatabaseRegistry = new OpenAPIRegistry();
 notionDatabaseRegistry.register('Notion Database', NotionDatabaseStructureViewerResponseSchema);
@@ -83,30 +85,9 @@ const DEFAULT_ANNOTATIONS = {
   underline: false,
 };
 
-// Helper to fetch the database structure
-async function fetchDatabaseStructure(databaseId: string, apiKey: string) {
-  // Headers for Notion API requests
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION, // or the version you are using
-  };
-  try {
-    const response = await fetch(`${NOTION_API_URL}/databases/${databaseId}`, {
-      method: 'GET',
-      headers: headers,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error fetching database structure: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    console.log(JSON.stringify(data));
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to fetch database structure: ${error.message}`);
-  }
+// Helper function to initialize the Notion client
+export function initNotionClient(apiKey: string) {
+  return new NotionClient({ auth: apiKey });
 }
 
 function mapNotionPropertyRequestBody(properties: any[] = []) {
@@ -213,96 +194,6 @@ function mapNotionPropertyRequestBody(properties: any[] = []) {
   return notionProperties;
 }
 
-async function createPageInNotionDatabase(apiKey: string, databaseId: string, properties: object) {
-  // Headers for Notion API requests
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION,
-  };
-  const requestBody = {
-    parent: { database_id: databaseId },
-    properties: properties,
-  };
-
-  try {
-    const response = await fetch(`${NOTION_API_URL}/pages`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error adding new page to database: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to add database to database: ${error.message}`);
-  }
-}
-
-async function updatePageInNotionDatabase(apiKey: string, pageId: string, properties: object) {
-  // Headers for Notion API requests
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION,
-  };
-
-  const requestBody = {
-    properties: properties,
-  };
-
-  try {
-    const response = await fetch(`${NOTION_API_URL}/pages/${pageId}`, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error adding update page: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to update page: ${error.message}`);
-  }
-}
-
-async function archivePageInNotionDatabase(apiKey: string, pageId: string) {
-  // Headers for Notion API requests
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION,
-  };
-
-  const requestBody = {
-    archived: true,
-  };
-
-  try {
-    const response = await fetch(`${NOTION_API_URL}/pages/${pageId}`, {
-      method: 'PATCH',
-      headers: headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error removing page: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to removing page: ${error.message}`);
-  }
-}
-
 async function queryPagesInNotionDatabase(
   apiKey: string,
   databaseId: string,
@@ -369,10 +260,11 @@ export const notionDatabaseRouter: Router = (() => {
     }
 
     try {
-      const dbStructure = await fetchDatabaseStructure(databaseId, notionApiKey);
+      const notion = initNotionClient(notionApiKey);
+      const database = await notion.databases.retrieve({ database_id: databaseId });
       const result = {
         databaseId: databaseId,
-        structure: dbStructure.properties,
+        structure: database.properties,
       };
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
@@ -421,10 +313,14 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(validateServiceResponse, res);
     }
     try {
+      const notion = initNotionClient(notionApiKey);
       // Validate properties before creating
       validateNotionProperties(databaseStructure, properties);
       const notionProperties = mapNotionPropertyRequestBody(properties);
-      const result = await createPageInNotionDatabase(notionApiKey, databaseId, notionProperties);
+      const result = await notion.pages.create({
+        parent: { database_id: databaseId },
+        properties: notionProperties,
+      });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Page created successfully',
@@ -468,10 +364,14 @@ export const notionDatabaseRouter: Router = (() => {
     }
 
     try {
+      const notion = initNotionClient(notionApiKey);
       // Validate properties before creating
       validateNotionProperties(databaseStructure, properties);
       const notionProperties = mapNotionPropertyRequestBody(properties);
-      const result = await updatePageInNotionDatabase(notionApiKey, pageId, notionProperties);
+      const result = await notion.pages.update({
+        page_id: pageId,
+        properties: notionProperties,
+      });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Page updated successfully',
@@ -515,7 +415,11 @@ export const notionDatabaseRouter: Router = (() => {
     }
 
     try {
-      const result = await archivePageInNotionDatabase(notionApiKey, pageId);
+      const notion = initNotionClient(notionApiKey);
+      const result = await notion.pages.update({
+        page_id: pageId,
+        archived: true,
+      });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Page removed successfully',
