@@ -75,8 +75,6 @@ notionDatabaseRegistry.registerPath({
   responses: createApiResponse(NotionDatabaseQueryPageResponseSchema, 'Success'),
 });
 
-const NOTION_API_URL = 'https://api.notion.com/v1';
-const NOTION_VERSION = '2022-06-28';
 const DEFAULT_ANNOTATIONS = {
   italic: false,
   bold: false,
@@ -192,46 +190,6 @@ function mapNotionPropertyRequestBody(properties: any[] = []) {
   });
 
   return notionProperties;
-}
-
-async function queryPagesInNotionDatabase(
-  apiKey: string,
-  databaseId: string,
-  filter: object,
-  sorts: any[],
-  pageSize: number,
-  startCursor: string | undefined
-) {
-  // Headers for Notion API requests
-  const headers = {
-    Authorization: `Bearer ${apiKey}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION,
-  };
-
-  const requestBody = {
-    filter: filter,
-    sorts: sorts,
-    page_size: pageSize,
-    start_cursor: startCursor,
-  };
-
-  try {
-    const response = await fetch(`${NOTION_API_URL}/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error query pages: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    throw new Error(`Failed to query pages: ${error.message}`);
-  }
 }
 
 export const notionDatabaseRouter: Router = (() => {
@@ -475,10 +433,16 @@ export const notionDatabaseRouter: Router = (() => {
     }
 
     try {
+      const notion = initNotionClient(notionApiKey);
       // Validate databaseStructure against filters and sorts
       validateDatabaseQueryConfig(databaseStructure, filter, sorts);
-
-      const result = await queryPagesInNotionDatabase(notionApiKey, databaseId, filter, sorts, pageSize, startCursor);
+      const result = await notion.databases.query({
+        database_id: databaseId,
+        filter,
+        sorts,
+        page_size: pageSize,
+        start_cursor: startCursor,
+      });
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'Pages query successfully',
