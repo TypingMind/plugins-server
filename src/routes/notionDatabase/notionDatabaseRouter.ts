@@ -544,13 +544,19 @@ export const notionDatabaseRouter: Router = (() => {
       // Prepare the request payload to create the Notion database
       const payload: any = {
         parent: parentSchema,
-        icon: { type: 'emoji', emoji: icon },
-        cover: { type: 'external', external: { url: cover } },
         title: mapNotionRichTextProperty(title),
         description: mapNotionRichTextProperty(description),
         is_inline: isInline,
         properties: databaseProperties,
       };
+
+      if (icon) {
+        payload.icon = { type: 'emoji', emoji: icon };
+      }
+
+      if (cover) {
+        payload.cover = { type: 'external', external: { url: cover } };
+      }
 
       // Call the Notion client to create the database
       const result = await notion.databases.create(payload);
