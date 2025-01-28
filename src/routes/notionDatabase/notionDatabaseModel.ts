@@ -132,3 +132,140 @@ export const NotionDatabaseQueryPageRequestBodySchema = z.object({
   startCursor: z.any().optional(),
 });
 export type NotionDatabaseQueryPageRequestBody = z.infer<typeof NotionDatabaseQueryPageRequestBodySchema>;
+
+// Define Notion Database Maker
+export type NotionDatabaseMakerResponse = z.infer<typeof NotionDatabaseMakerResponseSchema>;
+export const NotionDatabaseMakerResponseSchema = z.object({});
+// Request Body Schema
+export const NotionDatabaseMakerRequestBodySchema = z.object({
+  notionApiKey: z.string().openapi({
+    description:
+      'The Notion API Key getting from Notion Integration Page at https://www.notion.so/profile/integrations',
+  }),
+  parent: z
+    .object({
+      type: z.enum(['page_id', 'database_id']),
+      pageId: z.string().optional(),
+      databaseId: z.string().optional(),
+    })
+    .refine((data) => data.pageId || data.databaseId, {
+      message: 'Either `pageId` or `databaseId` must be provided.',
+    }),
+  icon: z.string().optional(),
+  cover: z.string().url().optional(),
+  isInline: z.boolean().optional(),
+  title: z
+    .array(
+      z.object({
+        type: z.literal('text'),
+        text: z
+          .object({
+            content: z.string().nonempty('Content is required.'),
+          })
+          .required(),
+        annotations: z
+          .object({
+            italic: z.boolean().default(false),
+            bold: z.boolean().default(false),
+            color: z.string().default('default'),
+            strikethrough: z.boolean().default(false),
+            underline: z.boolean().default(false),
+          })
+          .default({
+            italic: false,
+            bold: false,
+            color: 'default',
+            strikethrough: false,
+            underline: false,
+          })
+          .optional(),
+      })
+    )
+    .nonempty('Title is required.'),
+  description: z
+    .array(
+      z.object({
+        type: z.literal('text'),
+        text: z
+          .object({
+            content: z.string().nonempty('Content is required.'),
+          })
+          .required(),
+        annotations: z
+          .object({
+            italic: z.boolean().default(false),
+            bold: z.boolean().default(false),
+            color: z.string().default('default'),
+            strikethrough: z.boolean().default(false),
+            underline: z.boolean().default(false),
+          })
+          .default({
+            italic: false,
+            bold: false,
+            color: 'default',
+            strikethrough: false,
+            underline: false,
+          })
+          .optional(),
+      })
+    )
+    .optional(),
+  notionProperties: z
+    .array(
+      z.object({
+        propertyName: z.string().nonempty('Property name is required.'),
+        propertyType: z.enum([
+          'title',
+          'rich_text',
+          'number',
+          'select',
+          'status',
+          'multi_select',
+          'date',
+          'url',
+          'email',
+          'phone_number',
+          'checkbox',
+          'files',
+          'formula',
+        ]),
+        options: z
+          .array(
+            z.object({
+              name: z.string().nonempty('Option name is required.'),
+              color: z
+                .enum(['default', 'gray', 'brown', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'red'])
+                .optional(),
+            })
+          )
+          .optional(),
+        format: z
+          .enum([
+            'number',
+            'number_with_commas',
+            'percent',
+            'dollar',
+            'euro',
+            'pound',
+            'yen',
+            'ruble',
+            'rupee',
+            'won',
+            'yuan',
+            'real',
+            'lira',
+            'franc',
+            'singapore_dollar',
+            'australian_dollar',
+            'canadian_dollar',
+            'hong_kong_dollar',
+            'new_zealand_dollar',
+          ])
+          .optional(),
+        formula: z.string().optional(),
+        dateFormat: z.string().optional(),
+      })
+    )
+    .nonempty('Notion properties are required.'),
+});
+export type NotionDatabaseMakerRequestBody = z.infer<typeof NotionDatabaseMakerRequestBodySchema>;

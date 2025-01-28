@@ -13,6 +13,8 @@ import {
   NotionDatabaseArchivePageResponseSchema,
   NotionDatabaseCreatePageRequestBodySchema,
   NotionDatabaseCreatePageResponseSchema,
+  NotionDatabaseMakerRequestBodySchema,
+  NotionDatabaseMakerResponseSchema,
   NotionDatabaseQueryPageRequestBodySchema,
   NotionDatabaseQueryPageResponseSchema,
   NotionDatabaseStructureViewerRequestBodySchema,
@@ -20,7 +22,12 @@ import {
   NotionDatabaseUpdatePageRequestBodySchema,
   NotionDatabaseUpdatePageResponseSchema,
 } from './notionDatabaseModel';
-import { validateDatabaseQueryConfig, validateNotionProperties } from './utils';
+import {
+  buildColumnSchema,
+  mapNotionRichTextProperty,
+  validateDatabaseQueryConfig,
+  validateNotionProperties,
+} from './utils';
 
 export const COMPRESS = true;
 export const notionDatabaseRegistry = new OpenAPIRegistry();
@@ -73,6 +80,16 @@ notionDatabaseRegistry.registerPath({
     body: createApiRequestBody(NotionDatabaseQueryPageRequestBodySchema, 'application/json'),
   },
   responses: createApiResponse(NotionDatabaseQueryPageResponseSchema, 'Success'),
+});
+
+notionDatabaseRegistry.registerPath({
+  method: 'post',
+  path: '/notion-database/create-database',
+  tags: ['Notion Database'],
+  request: {
+    body: createApiRequestBody(NotionDatabaseMakerRequestBodySchema, 'application/json'),
+  },
+  responses: createApiResponse(NotionDatabaseMakerResponseSchema, 'Success'),
 });
 
 const DEFAULT_ANNOTATIONS = {
@@ -456,6 +473,101 @@ export const notionDatabaseRouter: Router = (() => {
         ResponseStatus.Failed,
         `Error: ${errorMessage}`,
         `Sorry, we couldn't query the pages!`,
+        errorMessage.includes('[Validation Error]') ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
+      );
+      return handleServiceResponse(errorServiceResponse, res);
+    }
+  });
+
+  router.post('/create-database', async (_req: Request, res: Response) => {
+    const {
+      notionApiKey,
+      parent,
+      icon,
+      cover,
+      title,
+      description,
+      isInline = false,
+      notionProperties = [],
+    } = _req.body;
+
+    if (!notionApiKey) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Notion Key is required!',
+        'Please make sure you have sent the Notion Key from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    if (parent && parent.type === 'page_id' && !parent.pageId) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Page ID is required!. Please provide specific Page ID or Page URL',
+        'Please make sure you have sent the Page ID from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    if (parent && parent.type === 'database_id' && !parent.databaseId) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Database ID is required!. Please provide specific Database ID or Database URL',
+        'Please make sure you have sent the Database ID from TypingMind.',
+        StatusCodes.BAD_REQUEST
+      );
+      return handleServiceResponse(validateServiceResponse, res);
+    }
+
+    try {
+      const notion = initNotionClient(notionApiKey);
+
+      // Initialize an empty object to hold properties
+      const databaseProperties: Record<string, any> = {};
+      // Iterate over notionProperties and maintain the order
+      notionProperties.forEach((property: any) => {
+        const schema = buildColumnSchema(property); // Assume this builds the required schema
+        for (const [key, value] of Object.entries(schema.properties)) {
+          databaseProperties[key] = value;
+        }
+      });
+
+      const parentSchema: any = { type: parent.type };
+      if (parent.type == 'page_id') {
+        parentSchema.page_id = parent.pageId || undefined;
+      } else if (parent.type == 'database_id') {
+        parentSchema.database_id = parent.databaseId || undefined;
+      }
+
+      // Prepare the request payload to create the Notion database
+      const payload: any = {
+        parent: parentSchema,
+        icon: { type: 'emoji', emoji: icon },
+        cover: { type: 'external', external: { url: cover } },
+        title: mapNotionRichTextProperty(title),
+        description: mapNotionRichTextProperty(description),
+        is_inline: isInline,
+        properties: databaseProperties,
+      };
+
+      // Call the Notion client to create the database
+      const result = await notion.databases.create(payload);
+
+      const serviceResponse = new ServiceResponse(
+        ResponseStatus.Success,
+        'Database created successfully',
+        result,
+        StatusCodes.OK
+      );
+      return handleServiceResponse(serviceResponse, res);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      const errorServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        `Error: ${errorMessage}`,
+        `Sorry, we couldn't create Database!`,
         errorMessage.includes('[Validation Error]') ? StatusCodes.BAD_REQUEST : StatusCodes.INTERNAL_SERVER_ERROR
       );
       return handleServiceResponse(errorServiceResponse, res);

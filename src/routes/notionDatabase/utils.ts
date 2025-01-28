@@ -59,3 +59,107 @@ export function validateNotionProperties(databaseStructure: any[], properties: a
     }
   });
 }
+
+export function buildColumnSchema({ propertyName, propertyType, options = [], format, formatDate, formula = '' }: any) {
+  const schema: any = {
+    properties: {},
+  };
+
+  // Define properties based on the column type
+  switch (propertyType) {
+    case 'title':
+      schema.properties[propertyName] = { title: {} };
+      break;
+    case 'rich_text':
+      schema.properties[propertyName] = { rich_text: {} };
+      break;
+    case 'number':
+      schema.properties[propertyName] = { number: { format: format } };
+      break;
+    case 'select':
+      schema.properties[propertyName] = {
+        select: {
+          options: options.map((option: any) => ({
+            name: option.name,
+            color: option.color || 'default',
+          })),
+        },
+      };
+      break;
+    case 'multi_select':
+      schema.properties[propertyName] = {
+        multi_select: {
+          options: options.map((option: any) => ({
+            name: option.name,
+            color: option.color || 'default',
+          })),
+        },
+      };
+      break;
+    case 'date':
+      schema.properties[propertyName] = {
+        date: {
+          format: formatDate,
+        },
+      };
+      break;
+    case 'checkbox':
+      schema.properties[propertyName] = { checkbox: {} };
+      break;
+    case 'url':
+      schema.properties[propertyName] = { url: {} };
+      break;
+    case 'email':
+      schema.properties[propertyName] = { email: {} };
+      break;
+    case 'phone_number':
+      schema.properties[propertyName] = { phone_number: {} };
+      break;
+    case 'formula':
+      schema.properties[propertyName] = {
+        formula: {
+          expression: formula, // Formula expression goes here
+        },
+      };
+      break;
+    case 'status':
+      schema.properties[propertyName] = { status: {} };
+      break;
+    case 'files':
+      schema.properties[propertyName] = { files: {} };
+      break;
+    default:
+      throw new Error(`Unknown column type: ${propertyType}`);
+  }
+
+  return schema;
+}
+
+export function mapNotionRichTextProperty(value: any[]) {
+  const DEFAULT_ANNOTATIONS = {
+    italic: false,
+    bold: false,
+    color: 'default',
+    strikethrough: false,
+    underline: false,
+  };
+
+  return value.map((item) => {
+    const annotationConfigs = item.annotations || DEFAULT_ANNOTATIONS;
+    return {
+      type: 'text',
+      text: { content: item.text.content },
+      annotations: {
+        italic: annotationConfigs.italic !== undefined ? annotationConfigs.italic : DEFAULT_ANNOTATIONS.italic,
+        bold: annotationConfigs.bold !== undefined ? annotationConfigs.bold : DEFAULT_ANNOTATIONS.bold,
+        color: annotationConfigs.color ? annotationConfigs.color : DEFAULT_ANNOTATIONS.color,
+        strikethrough:
+          annotationConfigs.strikethrough !== undefined
+            ? annotationConfigs.strikethrough
+            : DEFAULT_ANNOTATIONS.strikethrough,
+        underline:
+          annotationConfigs.underline !== undefined ? annotationConfigs.underline : DEFAULT_ANNOTATIONS.underline,
+      },
+    };
+  });
+}
