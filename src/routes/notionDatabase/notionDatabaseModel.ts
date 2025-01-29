@@ -144,12 +144,12 @@ export const NotionDatabaseMakerRequestBodySchema = z.object({
   }),
   parent: z
     .object({
-      type: z.enum(['page_id', 'database_id']),
+      type: z.enum(['page_id']),
       pageId: z.string().optional(),
       databaseId: z.string().optional(),
     })
-    .refine((data) => data.pageId || data.databaseId, {
-      message: 'Either `pageId` or `databaseId` must be provided.',
+    .refine((data) => data.pageId, {
+      message: 'Page ID must be provided.',
     }),
   icon: z.string().optional(),
   cover: z.string().url().optional(),

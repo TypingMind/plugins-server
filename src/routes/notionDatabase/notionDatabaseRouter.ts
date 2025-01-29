@@ -511,16 +511,6 @@ export const notionDatabaseRouter: Router = (() => {
       return handleServiceResponse(validateServiceResponse, res);
     }
 
-    if (parent && parent.type === 'database_id' && !parent.databaseId) {
-      const validateServiceResponse = new ServiceResponse(
-        ResponseStatus.Failed,
-        '[Validation Error] Database ID is required!. Please provide specific Database ID or Database URL',
-        'Please make sure you have sent the Database ID from TypingMind.',
-        StatusCodes.BAD_REQUEST
-      );
-      return handleServiceResponse(validateServiceResponse, res);
-    }
-
     try {
       const notion = initNotionClient(notionApiKey);
 
@@ -534,16 +524,9 @@ export const notionDatabaseRouter: Router = (() => {
         }
       });
 
-      const parentSchema: any = { type: parent.type };
-      if (parent.type == 'page_id') {
-        parentSchema.page_id = parent.pageId || undefined;
-      } else if (parent.type == 'database_id') {
-        parentSchema.database_id = parent.databaseId || undefined;
-      }
-
       // Prepare the request payload to create the Notion database
       const payload: any = {
-        parent: parentSchema,
+        parent: { type: parent.type, page_id: parent.pageId },
         title: mapNotionRichTextProperty(title),
         description: mapNotionRichTextProperty(description),
         is_inline: isInline,
