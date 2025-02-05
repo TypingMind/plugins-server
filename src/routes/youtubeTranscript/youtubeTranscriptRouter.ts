@@ -27,7 +27,7 @@ export const youtubeTranscriptRouter: Router = (() => {
 
   router.get('/get-transcript', async (_req: Request, res: Response) => {
     console.log('Head to get-transcript');
-    const { videoId } = _req.query;
+    const { query : videoId } = _req.query;
     console.log('Head to get-transcript -> ', videoId);
 
     if (!videoId) {
