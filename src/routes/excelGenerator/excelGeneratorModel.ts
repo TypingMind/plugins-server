@@ -26,8 +26,9 @@ export const ExcelGeneratorRequestBodySchema = z
                 title: z.string().optional().openapi({
                   description: 'The title of the table, which will be displayed in the first row.',
                 }),
-                startCell: z.string().openapi({
-                  description: "The starting cell (e.g., 'A1') where the table will begin.",
+                startCell: z.string().optional().default('A1').openapi({
+                  description:
+                    "The starting cell (e.g., 'A1') where the table will begin. Defaults to A1 if not specified.",
                 }),
                 columns: z
                   .array(
