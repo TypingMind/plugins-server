@@ -5,6 +5,7 @@ import express, { Request, Response, Router } from 'express';
 import got from 'got';
 import { StatusCodes } from 'http-status-codes';
 import { JSDOM } from 'jsdom';
+import { env } from '@/common/utils/envConfig';
 
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
@@ -64,7 +65,7 @@ export const webPageReaderRouter: Router = (() => {
 
   articleReaderRegistry.registerPath({
     method: 'get',
-    path: '/web-page-reader/get-content',
+    path: env.MOUNT_PATH + '/web-page-reader/get-content',
     tags: ['Web Page Reader'],
     request: {
       query: WebPageReaderRequestParamSchema,

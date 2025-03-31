@@ -24,6 +24,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
+import { env } from '@/common/utils/envConfig';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -36,7 +37,7 @@ export const wordGeneratorRegistry = new OpenAPIRegistry();
 wordGeneratorRegistry.register('WordGenerator', WordGeneratorResponseSchema);
 wordGeneratorRegistry.registerPath({
   method: 'post',
-  path: '/word-generator/generate',
+  path: env.MOUNT_PATH + '/word-generator/generate',
   tags: ['Word Generator'],
   request: {
     body: createApiRequestBody(WordGeneratorRequestBodySchema, 'application/json'),

@@ -2,6 +2,7 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import { Client as NotionClient } from '@notionhq/client';
 import express, { Request, Response, Router } from 'express';
 import { StatusCodes } from 'http-status-codes';
+import { env } from '@/common/utils/envConfig';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -34,7 +35,7 @@ export const notionDatabaseRegistry = new OpenAPIRegistry();
 notionDatabaseRegistry.register('Notion Database', NotionDatabaseStructureViewerResponseSchema);
 notionDatabaseRegistry.registerPath({
   method: 'post',
-  path: '/notion-database/view-structure',
+  path: env.MOUNT_PATH + '/notion-database/view-structure',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseStructureViewerRequestBodySchema, 'application/json'),
@@ -44,7 +45,7 @@ notionDatabaseRegistry.registerPath({
 
 notionDatabaseRegistry.registerPath({
   method: 'post',
-  path: '/notion-database/create-page',
+  path: env.MOUNT_PATH + '/notion-database/create-page',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseCreatePageRequestBodySchema, 'application/json'),
@@ -54,7 +55,7 @@ notionDatabaseRegistry.registerPath({
 
 notionDatabaseRegistry.registerPath({
   method: 'patch',
-  path: '/notion-database/update-page',
+  path: env.MOUNT_PATH + '/notion-database/update-page',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseUpdatePageRequestBodySchema, 'application/json'),
@@ -64,7 +65,7 @@ notionDatabaseRegistry.registerPath({
 
 notionDatabaseRegistry.registerPath({
   method: 'patch',
-  path: '/notion-database/archive-page',
+  path: env.MOUNT_PATH + '/notion-database/archive-page',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseArchivePageRequestBodySchema, 'application/json'),
@@ -74,7 +75,7 @@ notionDatabaseRegistry.registerPath({
 
 notionDatabaseRegistry.registerPath({
   method: 'post',
-  path: '/notion-database/query-pages',
+  path: env.MOUNT_PATH + '/notion-database/query-pages',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseQueryPageRequestBodySchema, 'application/json'),
@@ -84,7 +85,7 @@ notionDatabaseRegistry.registerPath({
 
 notionDatabaseRegistry.registerPath({
   method: 'post',
-  path: '/notion-database/create-database',
+  path: env.MOUNT_PATH + '/notion-database/create-database',
   tags: ['Notion Database'],
   request: {
     body: createApiRequestBody(NotionDatabaseMakerRequestBodySchema, 'application/json'),

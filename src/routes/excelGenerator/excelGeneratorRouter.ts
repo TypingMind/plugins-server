@@ -5,6 +5,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
+import { env } from '@/common/utils/envConfig';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -17,7 +18,7 @@ export const excelGeneratorRegistry = new OpenAPIRegistry();
 excelGeneratorRegistry.register('ExcelGenerator', ExcelGeneratorResponseSchema);
 excelGeneratorRegistry.registerPath({
   method: 'post',
-  path: '/excel-generator/generate',
+  path: env.MOUNT_PATH + '/excel-generator/generate',
   tags: ['Excel Generator'],
   request: {
     body: createApiRequestBody(ExcelGeneratorRequestBodySchema, 'application/json'),

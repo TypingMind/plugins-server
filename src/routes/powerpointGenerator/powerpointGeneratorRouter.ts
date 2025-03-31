@@ -5,6 +5,7 @@ import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
 import pptxgen from 'pptxgenjs';
+import { env } from '@/common/utils/envConfig';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
@@ -19,7 +20,7 @@ export const powerpointGeneratorRegistry = new OpenAPIRegistry();
 powerpointGeneratorRegistry.register('PowerpointGenerator', PowerpointGeneratorResponseSchema);
 powerpointGeneratorRegistry.registerPath({
   method: 'post',
-  path: '/powerpoint-generator/generate',
+  path: env.MOUNT_PATH + '/powerpoint-generator/generate',
   tags: ['Powerpoint Generator'],
   request: {
     body: createApiRequestBody(PowerpointGeneratorRequestBodySchema, 'application/json'),
