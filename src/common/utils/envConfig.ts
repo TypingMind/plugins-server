@@ -8,6 +8,7 @@ export const env = cleanEnv(process.env, {
   HOST: host({ default: 'localhost' }),
   PORT: port({ default: 3000 }),
   CORS_ORIGIN: str({ default: '*' }),
+  MOUNT_PATH: str({ default: '' }),
   COMMON_RATE_LIMIT_MAX_REQUESTS: num({ default: 100 }),
   COMMON_RATE_LIMIT_WINDOW_MS: num({ default: 60000 }),
 });

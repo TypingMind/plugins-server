@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { Express } from 'express';
 import helmet from 'helmet';
 import { pino } from 'pino';
+import { env } from '@/common/utils/envConfig';
 
 import { openAPIRouter } from '@/api-docs/openAPIRouter';
 import errorHandler from '@/common/middleware/errorHandler';
@@ -36,14 +37,14 @@ app.use((req, res, next) => {
 app.use(requestLogger());
 
 // Routes
-app.use('/health-check', healthCheckRouter);
-app.use('/images', express.static('public/images'));
-app.use('/youtube-transcript', youtubeTranscriptRouter);
-app.use('/web-page-reader', webPageReaderRouter);
-app.use('/powerpoint-generator', powerpointGeneratorRouter);
-app.use('/word-generator', wordGeneratorRouter);
-app.use('/excel-generator', excelGeneratorRouter);
-app.use('/notion-database', notionDatabaseRouter);
+app.use(env.MOUNT_PATH + '/health-check', healthCheckRouter);
+app.use(env.MOUNT_PATH + '/images', express.static('public/images'));
+app.use(env.MOUNT_PATH + '/youtube-transcript', youtubeTranscriptRouter);
+app.use(env.MOUNT_PATH + '/web-page-reader', webPageReaderRouter);
+app.use(env.MOUNT_PATH + '/powerpoint-generator', powerpointGeneratorRouter);
+app.use(env.MOUNT_PATH + '/word-generator', wordGeneratorRouter);
+app.use(env.MOUNT_PATH + '/excel-generator', excelGeneratorRouter);
+app.use(env.MOUNT_PATH + '/notion-database', notionDatabaseRouter);
 
 // Swagger UI
 app.use(openAPIRouter);

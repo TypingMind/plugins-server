@@ -1,5 +1,6 @@
 import express, { Request, Response, Router } from 'express';
 import swaggerUi from 'swagger-ui-express';
+import { env } from '@/common/utils/envConfig';
 
 import { generateOpenAPIDocument } from '@/api-docs/openAPIDocumentGenerator';
 
@@ -12,7 +13,7 @@ export const openAPIRouter: Router = (() => {
     res.send(openAPIDocument);
   });
 
-  router.use('/', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+  router.use(env.MOUNT_PATH + '/', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
 
   return router;
 })();
