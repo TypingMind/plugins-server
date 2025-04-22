@@ -19,33 +19,80 @@ import {
   TextRun,
   WidthType,
 } from 'docx';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
-
+import { z } from 'zod';
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import { WordGeneratorRequestBodySchema, WordGeneratorResponseSchema } from './wordGeneratorModel';
+import { jwtMiddleware } from '@/common/middleware/jwtMiddleware';
 export const COMPRESS = true;
 export const wordGeneratorRegistry = new OpenAPIRegistry();
 wordGeneratorRegistry.register('WordGenerator', WordGeneratorResponseSchema);
+// Validasi skema request yang lebih ketat
+const ValidatedWordGeneratorRequestBodySchema = WordGeneratorRequestBodySchema.refine(
+  (data) => {
+    // Tambahkan validasi kustom
+    return data.sections && data.sections.length > 0 && data.title && data.title.trim() !== '';
+  },
+  { message: 'Sections must be a non-empty array and title must be provided' }
+);
+
 wordGeneratorRegistry.registerPath({
   method: 'post',
   path: '/word-generator/generate',
   tags: ['Word Generator'],
+  security: [{ bearerAuth: [] }], // Tambahkan autentikasi
   request: {
-    body: createApiRequestBody(WordGeneratorRequestBodySchema, 'application/json'),
+    body: createApiRequestBody(ValidatedWordGeneratorRequestBodySchema, 'application/json'),
   },
-  responses: createApiResponse(WordGeneratorResponseSchema, 'Success'),
+  responses: {
+    ...createApiResponse(WordGeneratorResponseSchema, 'Success'),
+    400: {
+      description: 'Bad Request',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+    500: {
+      description: 'Internal Server Error',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+  },
 });
 
 // Create folder to contains generated files
 const exportsDir = path.join(__dirname, '../../..', 'word-exports');
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
@@ -85,7 +132,7 @@ cron.schedule('0 * * * *', () => {
   });
 });
 
-const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
+const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:8080';
 
 const FONT_CONFIG = {
   size: 12, // Font size in point
@@ -575,7 +622,7 @@ async function execGenWordFuncs(
     footnotes: footnoteConfig, // TODO: Enhance footnote
   });
 
-  const fileName = `word-file-${new Date().toISOString().replace(/\D/gi, '')}.docx`;
+  const fileName = `word-maia-${new Date().toISOString().replace(/\D/gi, '')}.docx`;
   const filePath = path.join(exportsDir, fileName);
 
   // Create and save the document
@@ -588,11 +635,34 @@ async function execGenWordFuncs(
 
 export const wordGeneratorRouter: Router = (() => {
   const router = express.Router();
+    // Middleware kustom untuk file statis dengan token
+      const tokenizedStaticMiddleware = (req: Request, res: Response, next: NextFunction) => {
+        // Tambahkan token ke query jika ada di path
+        const token = req.query.token;
+        if (token) {
+          return jwtMiddleware()(req, res, next);
+        }
+        next();
+      };
   // Static route for downloading files
-  router.use('/downloads', express.static(exportsDir));
+    // Gunakan middleware JWT untuk route downloads
+      router.use('/downloads', 
+        tokenizedStaticMiddleware,
+        express.static(exportsDir, {
+          setHeaders: (res, filePath) => {
+            const isValidFile = filePath.startsWith(exportsDir);
+            if (!isValidFile) {
+              res.status(403).json({ 
+                message: 'Access denied' 
+              });
+            }
+          },
+          fallthrough: false
+        })
+      );
 
-  router.post('/generate', async (_req: Request, res: Response) => {
-    const { title, sections = [], header, footer, wordConfig = {} } = _req.body;
+  router.post('/generate', async (req: Request, res: Response) => {
+    const { title, sections = [], header, footer, wordConfig = {} } = req.body;
     if (!sections.length) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
@@ -604,6 +674,9 @@ export const wordGeneratorRouter: Router = (() => {
     }
 
     try {
+      console.log(`[Word Generator] Generating Word with ${sections.length}`);
+   const authHeader = req.headers.authorization;
+   const token = authHeader ? authHeader.split(' ')[1] : null;
       const wordConfigs = {
         numberingReference: wordConfig.showNumberingInHeader ? wordConfig.numberingReference : '',
         showPageNumber: wordConfig.showPageNumber ?? false,
@@ -628,7 +701,7 @@ export const wordGeneratorRouter: Router = (() => {
         ResponseStatus.Success,
         'File generated successfully',
         {
-          downloadUrl: `${serverUrl}/word-generator/downloads/${fileName}`,
+          downloadUrl: `${serverUrl}/word-generator/downloads/${fileName}?token=${token}`,
         },
         StatusCodes.OK
       );

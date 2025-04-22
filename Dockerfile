@@ -1,13 +1,13 @@
 FROM node:current-slim
 
 # Create app directory
-WORKDIR /usr/src/app
+WORKDIR /app
 
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
 # Install app dependencies
-RUN npm ci
+RUN npm Install
 
 # Bundle app source
 COPY . .

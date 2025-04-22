@@ -1,34 +1,87 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
-import express, { Request, Response, Router } from 'express';
+import express, { NextFunction, Request, Response, Router } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
 import pptxgen from 'pptxgenjs';
+import { z } from 'zod';
 
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
+import jwt from 'jsonwebtoken';
+import { 
+  PowerpointGeneratorRequestBodySchema, 
+  PowerpointGeneratorResponseSchema 
+} from './powerpointGeneratorModel';
+import { AuthenticatedRequest, jwtMiddleware } from '@/common/middleware/jwtMiddleware';
 
-import { PowerpointGeneratorRequestBodySchema, PowerpointGeneratorResponseSchema } from './powerpointGeneratorModel';
 export const COMPRESS = true;
 
 // API Doc definition
 export const powerpointGeneratorRegistry = new OpenAPIRegistry();
 powerpointGeneratorRegistry.register('PowerpointGenerator', PowerpointGeneratorResponseSchema);
+
+// Validasi skema request yang lebih ketat
+const ValidatedPowerpointGeneratorRequestBodySchema = PowerpointGeneratorRequestBodySchema.refine(
+  (data) => {
+    // Tambahkan validasi kustom
+    return data.slides && data.slides.length > 0;
+  },
+  { message: 'Slides must be a non-empty array' }
+);
+
 powerpointGeneratorRegistry.registerPath({
   method: 'post',
   path: '/powerpoint-generator/generate',
   tags: ['Powerpoint Generator'],
+  security: [{ bearerAuth: [] }], // Tambahkan autentikasi
   request: {
-    body: createApiRequestBody(PowerpointGeneratorRequestBodySchema, 'application/json'),
+    body: createApiRequestBody(ValidatedPowerpointGeneratorRequestBodySchema, 'application/json'),
   },
-  responses: createApiResponse(PowerpointGeneratorResponseSchema, 'Success'),
+  responses: {
+    ...createApiResponse(PowerpointGeneratorResponseSchema, 'Success'),
+    400: {
+      description: 'Bad Request',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+    401: {
+      description: 'Unauthorized',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+    500: {
+      description: 'Internal Server Error',
+      content: {
+        'application/json': {
+          schema: z.object({
+            message: z.string(),
+            error: z.string().optional(),
+          }),
+        },
+      },
+    },
+  },
 });
 
 // Create folder to contains generated files
 const exportsDir = path.join(__dirname, '../../..', 'powerpoint-exports');
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
@@ -68,7 +121,7 @@ cron.schedule('0 * * * *', () => {
   });
 });
 
-const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
+const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:8080';
 
 // Define configurable options for layout, font size, and font family
 const defaultSlideConfig = {
@@ -445,7 +498,7 @@ async function execGenSlidesFuncs(slides: any[], config: any) {
     }
   });
 
-  const fileName = `your-presentation-${new Date().toISOString().replace(/\D/gi, '')}`;
+  const fileName = `maia-presentation-${new Date().toISOString().replace(/\D/gi, '')}`;
   const filePath = path.join(exportsDir, fileName);
 
   await pptx.writeFile({
@@ -458,22 +511,54 @@ async function execGenSlidesFuncs(slides: any[], config: any) {
 
 export const powerpointGeneratorRouter: Router = (() => {
   const router = express.Router();
-  // Static route for downloading files
-  router.use('/downloads', express.static(exportsDir));
-
-  router.post('/generate', async (_req: Request, res: Response) => {
-    const { slides = [], slideConfig = {} } = _req.body;
-    if (!slides.length) {
+    // Middleware kustom untuk file statis dengan token
+    const tokenizedStaticMiddleware = (req: Request, res: Response, next: NextFunction) => {
+      // Tambahkan token ke query jika ada di path
+      const token = req.query.token;
+      if (token) {
+        return jwtMiddleware()(req, res, next);
+      }
+      next();
+    };
+  
+  // Gunakan middleware JWT untuk route downloads
+    router.use('/downloads', 
+      tokenizedStaticMiddleware,
+      express.static(exportsDir, {
+        setHeaders: (res, filePath) => {
+          const isValidFile = filePath.startsWith(exportsDir);
+          if (!isValidFile) {
+            res.status(403).json({ 
+              message: 'Access denied' 
+            });
+          }
+        },
+        fallthrough: false
+      })
+    );
+  
+  
+router.post('/generate', async (req: Request, res: Response) => {
+    const { slides = [], slideConfig = {} } = req.body;
+     // Validasi input yang lebih komprehensif
+     if (!slides || !Array.isArray(slides) || slides.length === 0) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
-        '[Validation Error] Presentation slides is required!',
-        'Please make sure you have sent the slide content generated from TypingMind.',
+        'Validation Error: Presentation slides are required',
+        'Please ensure you have sent valid slide content',
         StatusCodes.BAD_REQUEST
       );
       return handleServiceResponse(validateServiceResponse, res);
     }
 
     try {
+       // Log permintaan untuk debugging
+      console.log(`[Powerpoint Generator] Generating presentation with ${slides.length} slides`);
+       // Dapatkan token dari header Authorization
+         // Dapatkan token dari header Authorization
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
+
       const fileName = await execGenSlidesFuncs(slides, {
         layout: slideConfig.layout === '' ? defaultSlideConfig.layout : slideConfig.layout, // Default: LAYOUT_WIDE, enum: LAYOUT_16x9 10 x 5.625 inches, LAYOUT_16x10 10 x 6.25 inches, LAYOUT_4x3 10 x 7.5 inches
         titleFontSize: slideConfig.titleFontSize === 0 ? defaultSlideConfig.titleFontSize : slideConfig.titleFontSize, // Default: 52, Emphasize the main topic in Title Slide
@@ -514,16 +599,21 @@ export const powerpointGeneratorRouter: Router = (() => {
         tableTextColor:
           slideConfig.tableTextColor === '' ? defaultSlideConfig.tableTextColor : slideConfig.tableTextColor, // Default: '#000000', Text color inside the table
       });
-      const serviceResponse = new ServiceResponse(
-        ResponseStatus.Success,
-        'File generated successfully',
-        {
-          downloadUrl: `${serverUrl}/powerpoint-generator/downloads/${fileName}`,
-        },
-        StatusCodes.OK
-      );
-      return handleServiceResponse(serviceResponse, res);
+      
+          // Tambahkan token sebagai query parameter jika tersedia
+        const serviceResponse = new ServiceResponse(
+            ResponseStatus.Success,
+            'File generated successfully',
+            {
+              // Tambahkan token ke URL download
+              downloadUrl: `${serverUrl}/powerpoint-generator/downloads/${fileName}?token=${token}`,
+            },
+            StatusCodes.OK
+          );
+          return handleServiceResponse(serviceResponse, res);
     } catch (error) {
+      // Log error untuk debugging
+      console.error(`[Powerpoint Generator] Error:`, error);
       const errorMessage = (error as Error).message;
       let responseObject = '';
       if (errorMessage.includes('')) {

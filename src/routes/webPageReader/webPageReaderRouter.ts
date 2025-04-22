@@ -11,6 +11,7 @@ import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import { WebPageReaderRequestParamSchema, WebPageReaderResponseSchema } from './webPageReaderModel';
+import { z } from 'zod';
 
 export const articleReaderRegistry = new OpenAPIRegistry();
 articleReaderRegistry.register('Web Page Reader', WebPageReaderResponseSchema);
@@ -66,11 +67,37 @@ export const webPageReaderRouter: Router = (() => {
     method: 'get',
     path: '/web-page-reader/get-content',
     tags: ['Web Page Reader'],
+    security: [{ bearerAuth: [] }], // Tambahkan autentikasi
     request: {
       query: WebPageReaderRequestParamSchema,
     },
-    responses: createApiResponse(WebPageReaderResponseSchema, 'Success'),
+    responses: {
+      ...createApiResponse(WebPageReaderResponseSchema, 'Success'),
+      401: {
+        description: 'Unauthorized',
+        content: {
+          'application/json': {
+            schema: z.object({
+              message: z.string(),
+              error: z.string().optional(),
+            }),
+          },
+        },
+      },
+      400: {
+        description: 'Bad Request',
+        content: {
+          'application/json': {
+            schema: z.object({
+              message: z.string(),
+              error: z.string().optional(),
+            }),
+          },
+        },
+      },
+    },
   });
+
 
   router.get('/get-content', async (_req: Request, res: Response) => {
     const { url } = _req.query;
