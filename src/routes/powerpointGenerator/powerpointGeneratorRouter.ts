@@ -28,7 +28,7 @@ powerpointGeneratorRegistry.registerPath({
 });
 
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'powerpoint-exports');
+const exportsDir = '/tmp/powerpoint-exports';
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });

@@ -1,22 +1,30 @@
-FROM node:current-slim
+FROM node:current-slim AS builder
 
-# Create app directory
-WORKDIR /usr/src/app
+ARG UID=3000
+ARG GID=3000
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+WORKDIR /app
 
-# Install app dependencies
-RUN npm ci
+COPY --chown=$UID:$GID . .
 
-# Bundle app source
-COPY . .
+RUN npm ci && npm run build && chown -R $UID:$GID /app
 
-# Build the TypeScript files
-RUN npm run build
+FROM node:current-slim AS prod
 
-# Expose port 8080
-EXPOSE 8080
+ARG UID=3000
+ARG GID=3000
 
-# Start the app
-CMD npm run start
+ENV NODE_ENV="production"
+ENV PORT="8080"
+ENV HOST="0.0.0.0"
+
+WORKDIR /app
+
+COPY --from=builder --chown=$UID:$GID /app/dist /app/dist
+COPY --from=builder /app/package*.json /app/
+
+RUN npm ci --omit=dev --ignore-scripts && chown -R $UID:$GID /app
+
+USER $UID:$GID
+
+CMD ["dist/index.js"]

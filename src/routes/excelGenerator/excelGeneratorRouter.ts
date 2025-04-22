@@ -26,7 +26,7 @@ excelGeneratorRegistry.registerPath({
 });
 
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'excel-exports');
+const exportsDir = '/tmp/excel-exports';
 
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
