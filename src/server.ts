@@ -37,7 +37,7 @@ if (!process.env.JWT_SECRET) {
 // Middlewares
 app.use(cors());
 app.use(helmet());
-app.use(rateLimiter);
+// app.use(rateLimiter);
 app.use(bodyParser.json());
 app.use(requestLogger());
 
