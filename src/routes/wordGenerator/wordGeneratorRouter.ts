@@ -45,7 +45,7 @@ wordGeneratorRegistry.registerPath({
 });
 
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'word-exports');
+const exportsDir = '/tmp/word-exports';
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
