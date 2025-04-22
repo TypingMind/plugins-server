@@ -43,6 +43,10 @@ RUN npm ci --omit=dev --ignore-scripts \
 # Drop user to the defined uid and gid
 USER $UID:$GID
 
+# define which port will be exposed
+# this can be build with a build argument
+EXPOSE 8080
+
 # run server via direct call
 # becuase npm run start requires a dev dependency
 CMD ["dist/index.js"]
