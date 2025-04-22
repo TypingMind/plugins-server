@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install app dependencies
-RUN npm Install
+RUN npm install
 
 # Bundle app source
 COPY . .
