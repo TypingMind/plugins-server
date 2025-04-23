@@ -12,7 +12,7 @@ export const openAPIRouter: Router = (() => {
     res.send(openAPIDocument);
   });
 
-  router.use('/', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
+  router.use('/docs-plugin', swaggerUi.serve, swaggerUi.setup(openAPIDocument));
 
   return router;
 })();

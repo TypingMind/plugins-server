@@ -5,7 +5,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
-
+import { EXCEL_EXPORTS_DIR } from '@/utils/paths';
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
@@ -26,7 +26,7 @@ excelGeneratorRegistry.registerPath({
 });
 
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'excel-exports');
+const exportsDir = EXCEL_EXPORTS_DIR;
 
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
@@ -85,12 +85,13 @@ interface SheetData {
 
 interface ExcelConfig {
   fontFamily: string;
-  tableTitleFontSize: number;
+  tableTitleFontSize: number;  // sesuaikan dengan nama yang digunakan di DEFAULT_EXCEL_CONFIGS
+  titleFontSize?: number;      // tambahkan untuk backward compatibility
   headerFontSize: number;
   fontSize: number;
   autoFitColumnWidth: boolean;
   autoFilter: boolean;
-  borderStyle: ExcelJS.BorderStyle | null; // thin, double, dashed, thick
+  borderStyle: ExcelJS.BorderStyle | null;
   wrapText: boolean;
 }
 
@@ -186,7 +187,7 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
 
   sheetsData.forEach(({ sheetName, tables }) => {
     const worksheet = workbook.addWorksheet(sheetName);
-    tables.forEach(({ startCell = 'A1', title, rows = [], columns = [], skipHeader }) => {
+    tables.forEach(({ startCell, title, rows = [], columns = [], skipHeader }) => {
       const startCol = columnLetterToNumber(startCell[0]); // Convert column letter to index (e.g., 'A' -> 1)
       const startRow = parseInt(startCell.slice(1)); // Extract the row number (e.g., 'A1' -> 1)
       let rowIndex = startRow; // Set the initial row index to startRow for each table
@@ -336,10 +337,10 @@ export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelCo
 export const excelGeneratorRouter: Router = (() => {
   const router = express.Router();
   // Static route for downloading files
-  router.use('/downloads', express.static(exportsDir));
+
 
   router.post('/generate', async (_req: Request, res: Response) => {
-    const { sheetsData, excelConfigs } = _req.body; // TODO: extract excel config object from request body
+    const { sheetsData, excelConfigs = {} } = _req.body;
     if (!sheetsData.length) {
       const validateServiceResponse = new ServiceResponse(
         ResponseStatus.Failed,
@@ -353,23 +354,22 @@ export const excelGeneratorRouter: Router = (() => {
     try {
       const fileName = execGenExcelFuncs(sheetsData, {
         fontFamily: excelConfigs.fontFamily ?? DEFAULT_EXCEL_CONFIGS.fontFamily,
-        tableTitleFontSize: excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.tableTitleFontSize,
+        tableTitleFontSize: excelConfigs.tableTitleFontSize ?? excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.tableTitleFontSize, // handle both property names
         headerFontSize: excelConfigs.headerFontSize ?? DEFAULT_EXCEL_CONFIGS.headerFontSize,
         fontSize: excelConfigs.fontSize ?? DEFAULT_EXCEL_CONFIGS.fontSize,
         autoFilter: excelConfigs.autoFilter ?? DEFAULT_EXCEL_CONFIGS.autoFilter,
-        borderStyle:
-          excelConfigs.borderStyle || excelConfigs.borderStyle !== 'none'
-            ? excelConfigs.borderStyle
-            : DEFAULT_EXCEL_CONFIGS.borderStyle,
+        borderStyle: excelConfigs.borderStyle === 'none' ? null : (excelConfigs.borderStyle ?? DEFAULT_EXCEL_CONFIGS.borderStyle),
         wrapText: excelConfigs.wrapText ?? DEFAULT_EXCEL_CONFIGS.wrapText,
         autoFitColumnWidth: excelConfigs.autoFitColumnWidth ?? DEFAULT_EXCEL_CONFIGS.autoFitColumnWidth,
       });
 
+      const authHeader = _req.headers.authorization;
+      const token = authHeader ? authHeader.split(' ')[1] : '';
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
         {
-          downloadUrl: `${serverUrl}/excel-generator/downloads/${fileName}`,
+          downloadUrl: `${serverUrl}/excel-generator/downloads/${fileName}?token=${token}`,
         },
         StatusCodes.OK
       );

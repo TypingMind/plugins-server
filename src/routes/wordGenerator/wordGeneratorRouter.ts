@@ -24,7 +24,7 @@ import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
-
+import { WORD_EXPORTS_DIR } from '@/utils/paths';
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
@@ -45,7 +45,7 @@ wordGeneratorRegistry.registerPath({
 });
 
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'word-exports');
+const exportsDir = WORD_EXPORTS_DIR;
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
@@ -589,7 +589,7 @@ async function execGenWordFuncs(
 export const wordGeneratorRouter: Router = (() => {
   const router = express.Router();
   // Static route for downloading files
-  router.use('/downloads', express.static(exportsDir));
+
 
   router.post('/generate', async (_req: Request, res: Response) => {
     const { title, sections = [], header, footer, wordConfig = {} } = _req.body;
@@ -624,11 +624,15 @@ export const wordGeneratorRouter: Router = (() => {
         },
         wordConfigs
       );
+
+
+    const authHeader = _req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : '';
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
         {
-          downloadUrl: `${serverUrl}/word-generator/downloads/${fileName}`,
+          downloadUrl: `${serverUrl}/word-generator/downloads/${fileName}?token=${token}`,
         },
         StatusCodes.OK
       );
