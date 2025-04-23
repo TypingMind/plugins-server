@@ -1,62 +1,78 @@
+// authRouter.ts
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { z } from 'zod';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key_for_development';
-
-// Skema validasi login untuk kredensial sementara
-const LoginSchema = z.object({
-  username: z.string().startsWith('tmp_user_', "Username must be a temporary user"),
-  password: z.string().startsWith('tmp_pass_', "Password must be a temporary password")
-});
 
 router.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Basic validation to ensure credentials are provided
+  if (!username || !password) {
+    return res.status(400).json({ 
+      message: 'Username and password are required' 
+    });
+  }
+
+  // Create a payload using the provided username
+  const payload = {
+    sub: Date.now().toString(), // Unique ID based on timestamp
+    email: username,
+    // You can add additional claims if needed
+    loginTime: new Date().toISOString(),
+    clientId: 'powerpoint-plugin'
+  };
+
   try {
-    const { username, password } = req.body;
-
-    // Validasi input untuk kredensial sementara
-    LoginSchema.parse({ username, password });
-
-    // Generate ID unik untuk pengguna sementara
-    const userId = `tmp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-
-    // Generate token
     const token = jwt.sign(
+      payload,
+      process.env.JWT_SECRET || 'your-secret-key',
       { 
-        id: userId, 
-        username: username,
-        type: 'temporary'
-      }, 
-      JWT_SECRET, 
-      { 
-        expiresIn: '1h' 
+        expiresIn: '5h',
+        algorithm: 'HS256'
       }
     );
 
-    res.json({
-      token,
-      user: {
-        id: userId,
-        username: username
-      }
-    });
-  } catch (error) {
-    console.error('Temporary Login Error:', error);
-    
-    // Tangani kesalahan validasi atau autentikasi
-    if (error instanceof z.ZodError) {
-      return res.status(400).json({ 
-        message: 'Invalid temporary credentials',
-        errors: error.errors 
-      });
-    }
+    // Log successful login attempt (optional)
+    console.log(`Login successful for user: ${username}`);
 
-    res.status(401).json({ 
-      message: 'Temporary login failed',
-      error: error instanceof Error ? error.message : 'Unknown error'
+    return res.json({
+      access_token: token,
+      token_type: 'Bearer',
+      expires_in: 18000,
+      generated_at: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('Token generation error:', error);
+    return res.status(500).json({ 
+      message: 'Error generating authentication token' 
     });
   }
 });
 
-export default router;
+// Optional: Add a token verification endpoint
+router.post('/verify', (req, res) => {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader) {
+    return res.status(401).json({ message: 'No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    return res.json({ 
+      valid: true, 
+      decoded 
+    });
+  } catch (error) {
+    return res.status(401).json({ 
+      valid: false, 
+      message: 'Invalid token' 
+    });
+  }
+});
+
+export const authRouter = router;

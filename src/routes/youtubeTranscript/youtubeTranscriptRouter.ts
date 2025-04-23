@@ -8,7 +8,6 @@ import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import { YoutubeTranscriptRequestParamSchema, YoutubeTranscriptResponseSchema } from './youtubeTranscriptModel';
-import { z } from 'zod';
 
 export const youtubeTranscriptRegistry = new OpenAPIRegistry();
 youtubeTranscriptRegistry.register('YoutubeTranscript', YoutubeTranscriptResponseSchema);
@@ -20,35 +19,10 @@ export const youtubeTranscriptRouter: Router = (() => {
     method: 'get',
     path: '/youtube-transcript/get-transcript',
     tags: ['Youtube Transcript'],
-    security: [{ bearerAuth: [] }], // Tambahkan autentikasi
     request: {
       query: YoutubeTranscriptRequestParamSchema,
     },
-    responses: {
-      ...createApiResponse(YoutubeTranscriptResponseSchema, 'Success'),
-      401: {
-        description: 'Unauthorized',
-        content: {
-          'application/json': {
-            schema: z.object({
-              message: z.string(),
-              error: z.string().optional(),
-            }),
-          },
-        },
-      },
-      400: {
-        description: 'Bad Request',
-        content: {
-          'application/json': {
-            schema: z.object({
-              message: z.string(),
-              error: z.string().optional(),
-            }),
-          },
-        },
-      },
-    },
+    responses: createApiResponse(YoutubeTranscriptResponseSchema, 'Success'),
   });
 
   router.get('/get-transcript', async (_req: Request, res: Response) => {

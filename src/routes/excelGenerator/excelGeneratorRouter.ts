@@ -1,72 +1,33 @@
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi';
 import * as ExcelJS from 'exceljs';
-import express, { NextFunction, Request, Response, Router } from 'express';
+import express, { Request, Response, Router } from 'express';
 import fs from 'fs';
 import { StatusCodes } from 'http-status-codes';
 import cron from 'node-cron';
 import path from 'path';
-import { z } from 'zod';
+import { EXCEL_EXPORTS_DIR } from '@/utils/paths';
 import { createApiRequestBody } from '@/api-docs/openAPIRequestBuilders';
 import { createApiResponse } from '@/api-docs/openAPIResponseBuilders';
 import { ResponseStatus, ServiceResponse } from '@/common/models/serviceResponse';
 import { handleServiceResponse } from '@/common/utils/httpHandlers';
 
 import { ExcelGeneratorRequestBodySchema, ExcelGeneratorResponseSchema } from './excelGeneratorModel';
-import { jwtMiddleware } from '@/common/middleware/jwtMiddleware';
 export const COMPRESS = true;
 export const excelGeneratorRegistry = new OpenAPIRegistry();
 excelGeneratorRegistry.register('ExcelGenerator', ExcelGeneratorResponseSchema);
-
-
-// Registrasi path OpenAPI
 excelGeneratorRegistry.registerPath({
   method: 'post',
   path: '/excel-generator/generate',
   tags: ['Excel Generator'],
-  security: [{ bearerAuth: [] }], // Tambahkan autentikasi
   request: {
     body: createApiRequestBody(ExcelGeneratorRequestBodySchema, 'application/json'),
   },
-  responses: {
-    ...createApiResponse(ExcelGeneratorResponseSchema, 'Success'),
-    400: {
-      description: 'Bad Request',
-      content: {
-        'application/json': {
-          schema: z.object({
-            message: z.string(),
-            error: z.string().optional(),
-          }),
-        },
-      },
-    },
-    401: {
-      description: 'Unauthorized',
-      content: {
-        'application/json': {
-          schema: z.object({
-            message: z.string(),
-            error: z.string().optional(),
-          }),
-        },
-      },
-    },
-    500: {
-      description: 'Internal Server Error',
-      content: {
-        'application/json': {
-          schema: z.object({
-            message: z.string(),
-            error: z.string().optional(),
-          }),
-        },
-      },
-    },
-  },
+  responses: createApiResponse(ExcelGeneratorResponseSchema, 'Success'),
 });
+
 // Create folder to contains generated files
-const exportsDir = path.join(__dirname, '../../..', 'excel-exports');
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret_key';
+const exportsDir = EXCEL_EXPORTS_DIR;
+
 // Ensure the exports directory exists
 if (!fs.existsSync(exportsDir)) {
   fs.mkdirSync(exportsDir, { recursive: true });
@@ -106,46 +67,34 @@ cron.schedule('0 * * * *', () => {
   });
 });
 
-const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:8080';
-
-// Ensure type safety for sheet data and excel configs
-interface CellData {
-  type: 'static_value' | 'formula';
-  value: string | number;
-}
-
-interface ColumnConfig {
-  name: string;
-  type: 'string' | 'number' | 'boolean' | 'date' | 'percent' | 'currency';
-  format?: string;
-}
-
-interface TableConfig {
-  title?: string;
-  startCell: string;
-  rows: CellData[][];
-  columns: ColumnConfig[];
-  skipHeader?: boolean;
-}
+const serverUrl = process.env.RENDER_EXTERNAL_URL || 'http://localhost:3000';
 
 interface SheetData {
   sheetName: string;
-  tables: TableConfig[];
+  tables: {
+    title: string;
+    startCell: string;
+    rows: {
+      type: string; // static_value or formula,
+      value: string;
+    }[][];
+    columns: { name: string; type: string; format: string }[]; // types that have format, number, percent, currency
+    skipHeader: boolean;
+  }[];
 }
 
 interface ExcelConfig {
-  fontFamily?: string;
-  tableTitleFontSize?: number;
-  headerFontSize?: number;
-  fontSize?: number;
-  autoFitColumnWidth?: boolean;
-  autoFilter?: boolean;
-  borderStyle?: ExcelJS.BorderStyle | null;
-  wrapText?: boolean;
+  fontFamily: string;
+  tableTitleFontSize: number;  // sesuaikan dengan nama yang digunakan di DEFAULT_EXCEL_CONFIGS
+  titleFontSize?: number;      // tambahkan untuk backward compatibility
+  headerFontSize: number;
+  fontSize: number;
+  autoFitColumnWidth: boolean;
+  autoFilter: boolean;
+  borderStyle: ExcelJS.BorderStyle | null;
+  wrapText: boolean;
 }
 
-
-// Default configuration with full type annotations
 const DEFAULT_EXCEL_CONFIGS: ExcelConfig = {
   fontFamily: 'Calibri',
   tableTitleFontSize: 13,
@@ -198,16 +147,7 @@ function autoFitColumns(
   }
 }
 
-export function execGenExcelFuncs(
-  sheetsData: SheetData[], 
-  excelConfigs: ExcelConfig = DEFAULT_EXCEL_CONFIGS
-): Promise<string> {
-  // Merge provided configs with defaults, ensuring complete coverage
-  const mergedConfigs: ExcelConfig = {
-    ...DEFAULT_EXCEL_CONFIGS,
-    ...excelConfigs
-  };
-
+export function execGenExcelFuncs(sheetsData: SheetData[], excelConfigs: ExcelConfig): string {
   const workbook = new ExcelJS.Workbook();
   const borderConfigs = excelConfigs.borderStyle
     ? {
@@ -379,103 +319,52 @@ export function execGenExcelFuncs(
   });
 
   // Write the workbook to a file
-  const fileName = `maia-excel-${new Date().toISOString().replace(/\D/gi, '')}.xlsx`;
+  const fileName = `excel-file-${new Date().toISOString().replace(/\D/gi, '')}.xlsx`;
   const filePath = path.join(exportsDir, fileName);
 
+  workbook.xlsx
+    .writeFile(filePath)
+    .then(() => {
+      console.log('File has been written to', filePath);
+    })
+    .catch((err) => {
+      console.error('Error writing Excel file', err);
+    });
 
-    return new Promise<string>((resolve, reject) => {
-    workbook.xlsx
-      .writeFile(filePath)
-      .then(() => {
-        console.log('File has been written to', filePath);
-        resolve(fileName);
-      })
-      .catch((err) => {
-        console.error('Error writing Excel file', err);
-        reject(err);
-      });
-  });
+  return fileName;
 }
 
 export const excelGeneratorRouter: Router = (() => {
   const router = express.Router();
-  // Middleware kustom untuk file statis dengan token
-      const tokenizedStaticMiddleware = (req: Request, res: Response, next: NextFunction) => {
-        // Tambahkan token ke query jika ada di path
-        const token = req.query.token;
-        if (token) {
-          return jwtMiddleware()(req, res, next);
-        }
-        next();
-      };
-    
-    // Gunakan middleware JWT untuk route downloads
-      router.use('/downloads', 
-        tokenizedStaticMiddleware,
-        express.static(exportsDir, {
-          setHeaders: (res, filePath) => {
-            const isValidFile = filePath.startsWith(exportsDir);
-            if (!isValidFile) {
-              res.status(403).json({ 
-                message: 'Access denied' 
-              });
-            }
-          },
-          fallthrough: false
-        })
-      );
+  // Static route for downloading files
 
-  router.post('/generate', async (req: Request, res: Response) => {
-    const { sheetsData, excelConfigs } = req.body; // TODO: extract excel config object from request body
-  // Add explicit null/undefined check
-  if (!sheetsData || !Array.isArray(sheetsData) || sheetsData.length === 0) {
-    const validateServiceResponse = new ServiceResponse(
-      ResponseStatus.Failed,
-      '[Validation Error] Sheets data is required!',
-      'Please make sure you have sent the excel sheets content generated from TypingMind.',
-      StatusCodes.BAD_REQUEST
-    );
-    return handleServiceResponse(validateServiceResponse, res);
-  }
 
-    try {
-    // console.log('Received request body:', JSON.stringify(req.body, null, 2));
-    const authHeader = req.headers.authorization;
-    const token = authHeader ? authHeader.split(' ')[1] : null;
-    const { 
-      sheetsData, 
-      excelConfigs = {} // Provide a default empty object
-    } = req.body || {};
-     // Comprehensive input validation
-     if (!sheetsData || !Array.isArray(sheetsData) || sheetsData.length === 0) {
-      return handleServiceResponse(
-        new ServiceResponse(
-          ResponseStatus.Failed,
-          'Validation Error',
-          'Sheets data is required and must be a non-empty array',
-          StatusCodes.BAD_REQUEST
-        ),
-        res
+  router.post('/generate', async (_req: Request, res: Response) => {
+    const { sheetsData, excelConfigs = {} } = _req.body;
+    if (!sheetsData.length) {
+      const validateServiceResponse = new ServiceResponse(
+        ResponseStatus.Failed,
+        '[Validation Error] Sheets data is required!',
+        'Please make sure you have sent the excel sheets content generated from TypingMind.',
+        StatusCodes.BAD_REQUEST
       );
+      return handleServiceResponse(validateServiceResponse, res);
     }
 
-      // Create a completely safe configuration object with fallbacks
-    const validatedExcelConfigs: ExcelConfig = {
-      fontFamily: excelConfigs?.fontFamily ?? DEFAULT_EXCEL_CONFIGS.fontFamily,
-      tableTitleFontSize: excelConfigs?.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.tableTitleFontSize,
-      headerFontSize: excelConfigs?.headerFontSize ?? DEFAULT_EXCEL_CONFIGS.headerFontSize,
-      fontSize: excelConfigs?.fontSize ?? DEFAULT_EXCEL_CONFIGS.fontSize,
-      autoFilter: excelConfigs?.autoFilter ?? DEFAULT_EXCEL_CONFIGS.autoFilter,
-      borderStyle: 
-        excelConfigs?.borderStyle && excelConfigs.borderStyle !== 'none'
-          ? excelConfigs.borderStyle
-          : DEFAULT_EXCEL_CONFIGS.borderStyle,
-      wrapText: excelConfigs?.wrapText ?? DEFAULT_EXCEL_CONFIGS.wrapText,
-      autoFitColumnWidth: excelConfigs?.autoFitColumnWidth ?? DEFAULT_EXCEL_CONFIGS.autoFitColumnWidth,
-    };
-       // Generate Excel file
-      const fileName = await execGenExcelFuncs(sheetsData, validatedExcelConfigs);
+    try {
+      const fileName = execGenExcelFuncs(sheetsData, {
+        fontFamily: excelConfigs.fontFamily ?? DEFAULT_EXCEL_CONFIGS.fontFamily,
+        tableTitleFontSize: excelConfigs.tableTitleFontSize ?? excelConfigs.titleFontSize ?? DEFAULT_EXCEL_CONFIGS.tableTitleFontSize, // handle both property names
+        headerFontSize: excelConfigs.headerFontSize ?? DEFAULT_EXCEL_CONFIGS.headerFontSize,
+        fontSize: excelConfigs.fontSize ?? DEFAULT_EXCEL_CONFIGS.fontSize,
+        autoFilter: excelConfigs.autoFilter ?? DEFAULT_EXCEL_CONFIGS.autoFilter,
+        borderStyle: excelConfigs.borderStyle === 'none' ? null : (excelConfigs.borderStyle ?? DEFAULT_EXCEL_CONFIGS.borderStyle),
+        wrapText: excelConfigs.wrapText ?? DEFAULT_EXCEL_CONFIGS.wrapText,
+        autoFitColumnWidth: excelConfigs.autoFitColumnWidth ?? DEFAULT_EXCEL_CONFIGS.autoFitColumnWidth,
+      });
 
+      const authHeader = _req.headers.authorization;
+      const token = authHeader ? authHeader.split(' ')[1] : '';
       const serviceResponse = new ServiceResponse(
         ResponseStatus.Success,
         'File generated successfully',
