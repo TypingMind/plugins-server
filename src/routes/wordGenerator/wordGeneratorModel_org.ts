@@ -9,9 +9,6 @@ export const WordGeneratorResponseSchema = z.object({
   filepath: z.string().openapi({
     description: 'The file path where the generated Word document is saved.',
   }),
-  downloadUrl: z.string().openapi({
-    description: 'The URL to download the generated document',
-  }),
 });
 
 // Define Cell Schema
@@ -67,14 +64,7 @@ const SectionSchema = z.object({
   }),
 });
 
-// ADDED: Template selection schema
-const TemplateSelectionSchema = z.object({
-  templateId: z.string().optional().openapi({
-    description: 'ID of the company template to use. If not provided, the default template will be used.',
-  }),
-});
-
-// Request Body Schema - MODIFIED to include template selection
+// Request Body Schema
 export const WordGeneratorRequestBodySchema = z.object({
   title: z.string().openapi({
     description: 'Title of the document.',
@@ -97,10 +87,6 @@ export const WordGeneratorRequestBodySchema = z.object({
   }),
   sections: z.array(SectionSchema).openapi({
     description: 'Sections of the document, which may include sub-sections.',
-  }),
-  // ADDED: Template selection
-  template: TemplateSelectionSchema.optional().openapi({
-    description: 'Template settings for the document',
   }),
   wordConfig: z
     .object({
@@ -150,16 +136,3 @@ export const WordGeneratorRequestBodySchema = z.object({
 });
 
 export type WordGeneratorRequestBody = z.infer<typeof WordGeneratorRequestBodySchema>;
-
-// ADDED: API to get available templates
-export const GetAvailableTemplatesResponseSchema = z.object({
-  templates: z.array(
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      description: z.string(),
-    })
-  ),
-});
-
-export type GetAvailableTemplatesResponse = z.infer<typeof GetAvailableTemplatesResponseSchema>;
