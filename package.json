@@ -43,6 +43,9 @@
     "uuidv4": "^6.2.13",
     "youtube-transcript": "^1.1.0",
     "zod": "^3.22.4"
+    "docxtemplater": "^3.37.9",
+    "docxtemplater-image-module-free": "^1.1.1",
+    "pizzip": "^3.1.4"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.0.3",
