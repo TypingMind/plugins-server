@@ -1,3 +1,6 @@
+> **🚧 DEPRECATED: Plugins Server is no longer officially supported by the TypingMind team. We now recommend using MCP instead. You can still continue using it, but we do not offer technical support or provide updates.**
+
+
 <h2 align="center">
   <img height="150" alt="Typing Mind - A better UI for ChatGPT" src="https://www.typingmind.com/banner.png" />
 <br/>
